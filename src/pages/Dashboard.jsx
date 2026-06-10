@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback, memo } from 'react';
 import { useVirus } from '../context/VirusContext';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 
 // Report Modal
-const ReportModal = ({ onClose, onSubmit }) => {
+const ReportModal = memo(({ onClose, onSubmit }) => {
   const [pkgName, setPkgName] = useState('');
   const [reason, setReason] = useState('');
   const [reporter, setReporter] = useState('');
@@ -60,10 +60,10 @@ const ReportModal = ({ onClose, onSubmit }) => {
       </div>
     </div>
   );
-};
+});
 
 // Issue Review Modal
-const IssueReviewModal = ({ onClose, issues, onApprove, onReject, loading }) => {
+const IssueReviewModal = memo(({ onClose, issues, onApprove, onReject, loading }) => {
   const [selectedPkg, setSelectedPkg] = useState({});
 
   const extractPackageName = (title) => {
@@ -111,9 +111,9 @@ const IssueReviewModal = ({ onClose, issues, onApprove, onReject, loading }) => 
       </div>
     </div>
   );
-};
+});
 
-const DetailPanel = ({ title, subtitle, data, color, icon, onAdd, onRemove, onClose, searchPlaceholder, onBulkAdd }) => {
+const DetailPanel = memo(({ title, subtitle, data, color, icon, onAdd, onRemove, onClose, searchPlaceholder, onBulkAdd }) => {
   const [search, setSearch] = useState('');
   const [newItem, setNewItem] = useState('');
   const [addedCount, setAddedCount] = useState(0);
@@ -233,7 +233,7 @@ const DetailPanel = ({ title, subtitle, data, color, icon, onAdd, onRemove, onCl
       </div>
     </div>
   );
-};
+});
 
 const Dashboard = () => {
   const { virusDB, addVirus, removeVirus, bulkAddVirus, protectedApps, addProtectedApp, removeProtectedApp, brandDB, addBrand, removeBrand, keywordDB, addKeyword, removeKeyword, device, deviceInfo, refreshDevices, isAdmin, exportVirusDat, importVirusDat,
@@ -254,26 +254,26 @@ const Dashboard = () => {
   const datFileRef = useRef(null);
   const isWireless = device?.id?.includes('_tcp') || device?.id?.includes(':');
 
-  const stats = [
+  const stats = useMemo(() => [
     { label: '恶意软件数据库', value: virusDB.length, sub: '已知威胁', icon: '🛡️', color: 'var(--accent-danger)', key: 'virus' },
     { label: '受保护的应用', value: protectedApps.length, sub: '安全名单', icon: '✅', color: 'var(--accent-success)', key: 'protected' },
     { label: '品牌库', value: brandDB.length, sub: '受保护品牌', icon: '🏢', color: 'var(--accent-primary)', key: 'brand' },
     { label: '病毒库关键词', value: keywordDB.length, sub: '特征记录', icon: '🔑', color: 'var(--accent-warning)', key: 'keyword' },
-  ];
+  ], [virusDB.length, protectedApps.length, brandDB.length, keywordDB.length]);
 
-  const hardware = [
+  const hardware = useMemo(() => [
     { label: '存储空间', value: device ? (deviceInfo?.storage?.percent || '---') : '---', detail: device ? `${deviceInfo?.storage?.used || 0} GB / ${deviceInfo?.storage?.total || 0} GB` : '0 GB / 0 GB', color: 'var(--accent-primary)' },
     { label: '内存状态', value: device ? (deviceInfo?.memory?.percent || '---') : '---', detail: device ? `${deviceInfo?.memory?.used || 0} GB / ${deviceInfo?.memory?.total || 0} GB` : '0 GB / 0 GB', color: 'var(--accent-secondary)' },
     { label: '当前电量', value: device ? `${deviceInfo?.battery?.level || 0}%` : '---', detail: device ? `${deviceInfo?.battery?.status || '未知'} · ${deviceInfo?.battery?.temp || '--'}` : '未连接', color: 'var(--accent-success)' },
-  ];
+  ], [device, deviceInfo?.storage?.percent, deviceInfo?.storage?.used, deviceInfo?.storage?.total, deviceInfo?.memory?.percent, deviceInfo?.memory?.used, deviceInfo?.memory?.total, deviceInfo?.battery?.level, deviceInfo?.battery?.status, deviceInfo?.battery?.temp]);
 
-  const handleBulkVirusAdd = (lines) => {
+  const handleBulkVirusAdd = useCallback((lines) => {
     const uniqueLines = [...new Set(lines.map(l => l.trim()).filter(l => l.length > 0))];
     const existing = new Set(virusDB);
     const newItems = uniqueLines.filter(l => !existing.has(l));
     bulkAddVirus(newItems);
     return { total: lines.length, added: newItems.length, skipped: uniqueLines.length - newItems.length };
-  };
+  }, [virusDB, bulkAddVirus]);
 
   const handleCardClick = (key) => {
     if (!isAdmin) return;
@@ -356,14 +356,14 @@ const Dashboard = () => {
     setShowIssueModal(true);
   };
 
-  const panelConfig = {
+  const panelConfig = useMemo(() => ({
     virus: { title: '🛡️ 恶意软件数据库', subtitle: '涵盖：广告注入/间谍窃取/木马后门/付费扣费/挖矿/勒索锁屏/钓鱼/恶意SDK/已知恶意家族', color: 'var(--accent-danger)', icon: '🛡️', searchPlaceholder: '搜索包名...', data: virusDB, onAdd: addVirus, onRemove: removeVirus, onBulkAdd: handleBulkVirusAdd },
     protected: { title: '✅ 受保护的应用', subtitle: '系统核心应用和安全服务，这些应用被标记为受保护，误删可能导致系统异常', color: 'var(--accent-success)', icon: '✅', searchPlaceholder: '搜索受保护应用...', data: protectedApps, onAdd: addProtectedApp, onRemove: removeProtectedApp },
     brand: { title: '🏢 品牌库', subtitle: '各大品牌官方应用（Google/Samsung/华为/小米/Meta/Microsoft/Amazon等），确保不误删品牌应用', color: 'var(--accent-primary)', icon: '🏢', searchPlaceholder: '搜索品牌应用...', data: brandDB, onAdd: addBrand, onRemove: removeBrand },
     keyword: { title: '🔑 病毒库关键词', subtitle: '用于检测应用名称/描述中的危险特征词，涵盖恶意行为/权限/SDK/已知家族名', color: 'var(--accent-warning)', icon: '🔑', searchPlaceholder: '搜索关键词...', data: keywordDB, onAdd: addKeyword, onRemove: removeKeyword },
-  };
+  }), [virusDB, addVirus, removeVirus, handleBulkVirusAdd, protectedApps, addProtectedApp, removeProtectedApp, brandDB, addBrand, removeBrand, keywordDB, addKeyword, removeKeyword]);
 
-  const cfg = activePanel ? panelConfig[activePanel] : null;
+  const cfg = useMemo(() => activePanel ? panelConfig[activePanel] : null, [activePanel, panelConfig]);
 
   return (
     <div style={{ animation: 'fadeIn 0.5s ease', display: 'flex', flexDirection: 'column', gap: '30px' }}>

@@ -74,7 +74,13 @@ export const VirusProvider = ({ children }) => {
   const [logs, setLogs] = useState(() => { try { return JSON.parse(localStorage.getItem('aiva_logs') || '[]'); } catch { return []; } });
   const [device, setDevice] = useState(null);
   const [deviceInfo, setDeviceInfo] = useState(null);
-  const [debugMsg, setDebugMsg] = useState('System ready');
+  const [debugMsg, _setDebugMsg] = useState('System ready');
+  // Perf: batch logs and debugMsg to reduce re-renders
+  const logsRef = useRef([]);
+  const debugMsgRef = useRef('System ready');
+  const logFlushTimerRef = useRef(null);
+  // Perf: setDebugMsg writes to ref only; flush interval syncs to state
+  const setDebugMsg = useCallback((v) => { debugMsgRef.current = v; }, []);
   const [isManualPaused, setIsManualPaused] = useState(false);
   const [waitingAuth, setWaitingAuth] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // Always start as guest by default
@@ -396,6 +402,21 @@ export const VirusProvider = ({ children }) => {
     if (savedRole) setGithubRole(savedRole);
   }, []);
 
+  // Perf: batch state updates — flush ref→state every 500ms to avoid re-render storms
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // Sync logs ref → state
+      if (logsRef.current.length > 0) {
+        setLogs([...logsRef.current]);
+        logsRef.current = [];
+      }
+      // Sync debugMsg ref → state (only triggers re-render if value changed)
+      _setDebugMsg(prev => debugMsgRef.current !== prev ? debugMsgRef.current : prev);
+    }, 500);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Persist logs to localStorage (debounced)
   useEffect(() => { try { localStorage.setItem('aiva_logs', JSON.stringify(logs.slice(0, 500))); } catch {} }, [logs]);
 
   useEffect(() => {
@@ -495,7 +516,10 @@ export const VirusProvider = ({ children }) => {
   const pollIntervalRef = useRef(POLL_FAST);
   const burstCountRef = useRef(0);
 
-  const addLog = useCallback((l) => setLogs(lg => [{ ...l, id: Date.now() + Math.random() }, ...lg]), []);
+  const addLog = useCallback((l) => {
+    // Perf: push to ref, flush interval handles state update
+    logsRef.current = [{ ...l, id: Date.now() + Math.random() }, ...logsRef.current].slice(0, 500);
+  }, []);
 
   const fetchDeviceInfo = useCallback(async (id) => {
     if (!id) return;

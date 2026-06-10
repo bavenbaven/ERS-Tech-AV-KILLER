@@ -211,20 +211,7 @@ function App() {
     }, 150);
   }, [activeTab]);
 
-  const renderContent = () => {
-    const contentClass = `page-content ${pageTransition ? 'page-exit' : 'page-enter'}`;
-    let content;
-    switch (activeTab) {
-      case 'dashboard': content = <Dashboard />; break;
-      case 'app-manager': content = <AppManager />; break;
-      case 'file-manager': content = <FileManager />; break;
-      case 'remote-control': content = <RemoteControl />; break;
-      case 'log': content = <Log />; break;
-      case 'help': content = <Help />; break;
-      default: content = <Dashboard />;
-    }
-    return <div className={contentClass}>{content}</div>;
-  };
+  const contentClass = `page-content ${pageTransition ? 'page-exit' : 'page-enter'}`;
 
 
   if (showSplash) return <SplashScreen onSkip={handleSkipSplash} />;
@@ -336,7 +323,14 @@ function App() {
               )}
             </div>
           </header>
-          {renderContent()}
+          <div className={contentClass}>
+            {activeTab === 'dashboard' && <Dashboard />}
+            {activeTab === 'app-manager' && <AppManager />}
+            {activeTab === 'file-manager' && <FileManager />}
+            {activeTab === 'remote-control' && <RemoteControl />}
+            {activeTab === 'log' && <Log />}
+            {activeTab === 'help' && <Help />}
+          </div>
         </main>
       </div>
 

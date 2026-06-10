@@ -54,6 +54,10 @@
       "nsis": {
         "installMode": "currentUser",
         "installerHooks": "install-pre.nsh"
+      },
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
       }
     }
   }
