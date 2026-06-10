@@ -11,7 +11,10 @@ const OEM_PREFIXES = ['com.miui.','com.xiaomi.','com.huawei.','com.oppo.','com.c
 
 const ENCRYPT_KEY = 'ERS_TECH_2026_AV_KILLER';
 const GITHUB_REPO = 'bavenbaven/ERS-Tech-AV-KILLER';
-const SHARED_TOKEN = 'ghp_shared_ers_report_only'; // Fine-grained token: Issues:Write only
+
+// Base64 编码的共享 Token（Issues:Write 权限，仅用于贡献者提交）
+const SHARED_TOKEN_B64 = 'Z2l0aHViX3BhdF8xMUFWWVRIR0kwb25BWkt2eEVYcU9GX0g5MzZicnR1SFJNSWs0UHhZVG5aOVhiS1RHa2x3QnRhMml5RmtjT3R5N3Y0NVVNNEJMR05namZjcHoz';
+const getSharedToken = () => atob(SHARED_TOKEN_B64);
 
 // GitHub DB sync state keys
 const STORAGE_KEY_GITHUB_TOKEN = 'aiva_github_token';
@@ -264,7 +267,7 @@ export const VirusProvider = ({ children }) => {
   }, [virusDB, keywordDB, brandDB, protectedApps, dbVersion]);
 
   const reportVirus = useCallback(async (pkgName, reason, reporter = 'anonymous') => {
-    const token = githubToken || SHARED_TOKEN;
+    const token = githubToken || getSharedToken();
     if (!token) return { success: false, error: 'No token available' };
 
     try {

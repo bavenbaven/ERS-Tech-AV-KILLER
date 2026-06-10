@@ -600,7 +600,6 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
 // ===== GitHub Sync Commands =====
 
 const GITHUB_REPO: &str = "bavenbaven/ERS-Tech-AV-KILLER";
-const SHARED_TOKEN: &str = "ghp_shared_ers_report_only";  // 只有 Issues 权限的共享 Token
 
 #[tauri::command]
 async fn github_fetch_db(db_name: String) -> Result<String, String> {
