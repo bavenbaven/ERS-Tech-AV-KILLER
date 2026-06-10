@@ -1,0 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Rust build
+src-tauri/target/
+
+# Build artifacts
+build/
+release/
+
+# Server binaries & large files
+server/node.exe
+server/platform-tools.zip
+server/platform-tools/adb.exe
+server/platform-tools/scrcpy.exe
+server/platform-tools/scrcpy-server
+server/platform-tools/*.dll
+server/platform-tools/app.apk
+server/platform-tools/icon.png
+server/platform-tools/settings.json
+server/platform-tools/scrcpy-console.bat
+server/platform-tools/scrcpy-noconsole.vbs
+server/icon-cache/
+
+# OS files
+Thumbs.db
+.vs/
+.learnings/

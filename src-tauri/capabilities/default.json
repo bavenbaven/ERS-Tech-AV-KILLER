@@ -1,0 +1,28 @@
+{
+  "identifier": "default",
+  "description": "Default permissions for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "updater:default",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-set-resizable",
+    "core:event:allow-listen",
+    "shell:allow-open",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://raw.githubusercontent.com/**" },
+        { "url": "https://api.github.com/**" }
+      ]
+    }
+  ]
+}
