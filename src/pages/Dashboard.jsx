@@ -1,5 +1,7 @@
 import React, { useState, useRef, useMemo, useCallback, memo } from 'react';
 import { useVirus } from '../context/VirusContext';
+import { useDebounce } from '../hooks/useDebounce';
+import { useVirtualList } from '../hooks/useVirtualList';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 
@@ -119,7 +121,12 @@ const DetailPanel = memo(({ title, subtitle, data, color, icon, onAdd, onRemove,
   const [addedCount, setAddedCount] = useState(0);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
-  const filtered = search ? data.filter(p => p.toLowerCase().includes(search.toLowerCase())) : null;
+  const scrollContainerRef = useRef(null);
+  const debouncedSearch = useDebounce(search, 300);
+  const filtered = debouncedSearch ? data.filter(p => p.toLowerCase().includes(debouncedSearch.toLowerCase())) : null;
+  const displayData = filtered || data;
+  const { onScroll, startIdx, endIdx, totalHeight, offsetY, ROW_HEIGHT } = useVirtualList(displayData.length, scrollContainerRef);
+  const visibleItems = displayData.slice(startIdx, endIdx);
 
   const handleAdd = () => {
     if (!newItem.trim()) return;
@@ -183,46 +190,23 @@ const DetailPanel = memo(({ title, subtitle, data, color, icon, onAdd, onRemove,
           </div>
         </div>
 
-        {/* Content - Two Column */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 35px' }}>
-          {filtered ? (
-            <div>
-              <p style={{ fontSize: '18px', color: 'var(--text-muted)', marginBottom: '15px' }}>搜索结果: {filtered.length} 条</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0 40px' }}>
-                {[
-                  filtered.slice(0, Math.ceil(filtered.length / 2)),
-                  filtered.slice(Math.ceil(filtered.length / 2))
-                ].map((half, halfIdx) => (
-                  <table key={halfIdx} style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead><tr style={{ borderBottom: '2px solid var(--border)' }}>
-                      <th style={{ padding: '14px 12px', textAlign: 'left', fontSize: '20px', color: 'var(--text-muted)', fontWeight: '600', width: '70px' }}>#</th>
-                      <th style={{ padding: '14px 12px', textAlign: 'left', fontSize: '20px', color: 'var(--text-muted)', fontWeight: '600' }}>包名</th>
-                      <th style={{ padding: '14px 12px', width: '80px' }}></th>
-                    </tr></thead>
-                    <tbody>
-                      {half.map((pkg, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                          <td style={{ padding: '12px 12px', fontSize: '20px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{halfIdx === 0 ? i + 1 : Math.ceil(filtered.length / 2) + i + 1}</td>
-                          <td style={{ padding: '12px 12px', fontSize: '21px', fontFamily: 'monospace', color: 'var(--text-main)', fontWeight: '600', wordBreak: 'break-all' }}>{pkg}</td>
-                          <td style={{ padding: '12px 12px', textAlign: 'right' }}><button onClick={() => onRemove(pkg)} style={{ background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '6px', padding: '4px 12px', fontSize: '18px', cursor: 'pointer', fontWeight: '600' }}>🗑️</button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ))}
-              </div>
+        {/* Content - Virtual List */}
+        <div ref={scrollContainerRef} onScroll={onScroll} style={{ flex: 1, overflowY: 'auto', padding: '0 35px' }}>
+          {filtered && <p style={{ fontSize: '18px', color: 'var(--text-muted)', margin: '15px 0 10px' }}>搜索结果: {filtered.length} 条</p>}
+          <div style={{ height: totalHeight, position: 'relative' }}>
+            <div style={{ transform: `translateY(${offsetY}px)`, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0 40px' }}>
+              {visibleItems.map((pkg, vi) => {
+                const globalIdx = startIdx + vi;
+                return (
+                  <div key={globalIdx} style={{ display: 'flex', alignItems: 'center', height: ROW_HEIGHT, borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <span style={{ width: '60px', fontSize: '18px', fontFamily: 'monospace', color: 'var(--text-muted)', flexShrink: 0 }}>{globalIdx + 1}</span>
+                    <span style={{ flex: 1, fontSize: '17px', fontFamily: 'monospace', color: 'var(--text-main)', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pkg}</span>
+                    <button onClick={() => onRemove(pkg)} style={{ background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '6px', padding: '4px 12px', fontSize: '16px', cursor: 'pointer', fontWeight: '600', flexShrink: 0 }}>🗑️</button>
+                  </div>
+                );
+              })}
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px 40px' }}>
-              {data.map((pkg, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <span style={{ width: '60px', fontSize: '20px', fontFamily: 'monospace', color: 'var(--text-muted)', flexShrink: 0 }}>{i + 1}</span>
-                  <span style={{ flex: 1, fontSize: '20px', fontFamily: 'monospace', color: 'var(--text-main)', fontWeight: '500', wordBreak: 'break-all' }}>{pkg}</span>
-                  <button onClick={() => onRemove(pkg)} style={{ background: 'transparent', border: 'none', color: '#ef4444', borderRadius: '6px', padding: '4px 12px', fontSize: '18px', cursor: 'pointer', fontWeight: '600', flexShrink: 0, marginLeft: '10px' }}>🗑️</button>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Footer */}
