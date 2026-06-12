@@ -1,0 +1,62 @@
+{
+  "productName": "ERS Tech AV Killer",
+  "version": "1.6.0",
+  "identifier": "com.erstech.avkiller",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "ERS Tech AV Killer",
+        "width": 1250,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "decorations": false,
+        "backgroundColor": "#050510"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://cdn.jsdelivr.net/gh/bavenbaven/ERS-Tech-AV-KILLER@main/VERSION.json",
+        "https://raw.githubusercontent.com/bavenbaven/ERS-Tech-AV-KILLER/main/VERSION.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3QTJFNDRGMjE5RDI3ODYKUldTR0o1MGhUK1NpZDI5UVlNUVFTOXdCQUxnbDRtL1dIazlJQVdtNlJRTUxNZVh4N25qV0xaWXYK"
+    },
+    "fs": {}
+  },
+  "bundle": {
+    "active": true,
+    "targets": "nsis",
+    "resources": {
+      "../server/platform-tools/": "server/platform-tools/",
+      "../server/driver/": "server/driver/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "install-pre.nsh"
+      },
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      }
+    }
+  }
+}

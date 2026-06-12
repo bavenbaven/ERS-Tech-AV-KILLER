@@ -1,0 +1,710 @@
+; Google USB Driver
+; (c) 2010 Google, Inc.
+; Contains portions Copyright (c) 2008-2010, Code Aurora Forum. All rights reserved.
+
+[Version]
+Signature           = "$WINDOWS NT$"
+Class               = AndroidUsbDeviceClass
+ClassGuid           = {3F966BD9-FA04-4ec5-991C-D326FC672C8E}
+Provider            = %ProviderName%
+DriverVer=01/01/2025,12.0.0.0
+CatalogFile         = android.cat
+
+[ClassInstall32]
+AddReg = AndroidUsbDeviceClass_AddReg
+
+[AndroidUsbDeviceClass_AddReg]
+HKR,,,,"Android USB Devices"
+HKR,,Icon,,-1
+
+[DestinationDirs]
+AndroidUsbDeviceClass_CopyFiles = 13
+
+[SourceDisksNames]
+1 = %DiskName%,,,
+
+[SourceDisksFiles]
+AdbWinApi.dll = 1
+AdbWinUsbApi.dll = 1
+
+[Manufacturer]
+%ProviderName% = Google, NTx86, NTamd64, NTarm64
+
+[Google.NTx86]
+; Google/Pixel
+%USB\VID_18D1.PID_4EE7.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE7
+%USB\VID_18D1.PID_4EE0.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE0
+%USB\VID_18D1.PID_D001.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D001
+%USB\VID_18D1.PID_D002.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D002
+%USB\VID_18D1.PID_4EE1.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE1
+%USB\VID_18D1.PID_D00D.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D00D
+%USB\VID_18D1.PID_D00E.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D00E
+
+; Samsung
+%USB\VID_04E8.PID_6863.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6863
+%USB\VID_04E8.PID_6860.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6860
+%USB\VID_04E8.PID_685C.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_685C
+%USB\VID_04E8.PID_6864.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6864
+%USB\VID_04E8.PID_6865.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6865
+%USB\VID_04E8.PID_6866.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6866
+%USB\VID_04E8.PID_6867.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6867
+%USB\VID_04E8.PID_6889.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6889
+%USB\VID_04E8.PID_689E.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_689E
+%USB\VID_04E8.PID_68A6.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68A6
+%USB\VID_04E8.PID_68C3.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68C3
+%USB\VID_04E8.PID_68D9.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68D9
+%USB\VID_04E8.PID_68EE.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68EE
+%USB\VID_04E8.PID_68F1.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68F1
+%USB\VID_04E8.PID_6A8C.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8C
+%USB\VID_04E8.PID_6A8D.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8D
+%USB\VID_04E8.PID_6A8E.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8E
+%USB\VID_04E8.PID_6A8F.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8F
+%USB\VID_04E8.PID_6A90.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A90
+%USB\VID_04E8.PID_6A91.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A91
+
+; Xiaomi/Redmi
+%USB\VID_2717.PID_FF80.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF80
+%USB\VID_2717.PID_FF81.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF81
+%USB\VID_2717.PID_FF82.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF82
+%USB\VID_2717.PID_FF83.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF83
+%USB\VID_2717.PID_FF84.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF84
+%USB\VID_2717.PID_FF85.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF85
+%USB\VID_2717.PID_FF86.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF86
+%USB\VID_2717.PID_FF88.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF88
+%USB\VID_2717.PID_FF89.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF89
+%USB\VID_2717.PID_FF8A.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8A
+%USB\VID_2717.PID_FF8B.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8B
+%USB\VID_2717.PID_FF8C.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8C
+%USB\VID_2717.PID_FF8D.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8D
+%USB\VID_2717.PID_FF8E.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8E
+%USB\VID_2717.PID_FF8F.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8F
+%USB\VID_2717.PID_FF90.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF90
+
+; Huawei/Honor
+%USB\VID_12D1.PID_1079.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1079
+%USB\VID_12D1.PID_107E.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_107E
+%USB\VID_12D1.PID_107F.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_107F
+%USB\VID_12D1.PID_1080.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1080
+%USB\VID_12D1.PID_1081.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1081
+%USB\VID_12D1.PID_1082.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1082
+%USB\VID_12D1.PID_1083.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1083
+%USB\VID_12D1.PID_1084.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1084
+%USB\VID_12D1.PID_1085.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1085
+%USB\VID_12D1.PID_1086.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1086
+%USB\VID_12D1.PID_1087.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1087
+%USB\VID_12D1.PID_1088.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1088
+%USB\VID_12D1.PID_1089.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1089
+%USB\VID_12D1.PID_1090.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1090
+%USB\VID_12D1.PID_1091.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1091
+%USB\VID_12D1.PID_1092.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1092
+%USB\VID_12D1.PID_1094.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1094
+%USB\VID_12D1.PID_1096.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1096
+%USB\VID_12D1.PID_1097.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1097
+%USB\VID_12D1.PID_1098.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1098
+%USB\VID_12D1.PID_109A.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109A
+%USB\VID_12D1.PID_109B.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109B
+%USB\VID_12D1.PID_109C.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109C
+%USB\VID_12D1.PID_109D.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109D
+%USB\VID_12D1.PID_10A3.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_10A3
+%USB\VID_12D1.PID_10A5.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_10A5
+
+; OPPO/OnePlus/Realme
+%USB\VID_22D9.PID_2801.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2801
+%USB\VID_22D9.PID_2802.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2802
+%USB\VID_22D9.PID_2803.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2803
+%USB\VID_22D9.PID_2804.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2804
+%USB\VID_22D9.PID_2805.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2805
+%USB\VID_22D9.PID_2806.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2806
+%USB\VID_22D9.PID_2807.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2807
+%USB\VID_22D9.PID_2808.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2808
+%USB\VID_22D9.PID_2809.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2809
+%USB\VID_22D9.PID_280A.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_280A
+%USB\VID_22D9.PID_280B.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_280B
+%USB\VID_2B4C.PID_8001.DeviceDesc%     = USB_Install, USB\VID_2B4C&PID_8001
+%USB\VID_2B4C.PID_8002.DeviceDesc%     = USB_Install, USB\VID_2B4C&PID_8002
+%USB\VID_2B4C.PID_8003.DeviceDesc%     = USB_Install, USB\VID_2B4C&PID_8003
+
+; vivo/iQOO
+%USB\VID_2D95.PID_6000.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6000
+%USB\VID_2D95.PID_6001.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6001
+%USB\VID_2D95.PID_6002.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6002
+%USB\VID_2D95.PID_6003.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6003
+%USB\VID_2D95.PID_6004.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6004
+%USB\VID_2D95.PID_6005.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6005
+%USB\VID_2D95.PID_6006.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6006
+
+; Motorola
+%USB\VID_22B8.PID_2E81.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E81
+%USB\VID_22B8.PID_2E82.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E82
+%USB\VID_22B8.PID_2E83.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E83
+%USB\VID_22B8.PID_2E85.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E85
+%USB\VID_22B8.PID_2E86.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E86
+%USB\VID_22B8.PID_2E87.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E87
+%USB\VID_22B8.PID_2E88.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E88
+
+; Sony
+%USB\VID_054C.PID_0A5C.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5C
+%USB\VID_054C.PID_0A5D.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5D
+%USB\VID_054C.PID_0A5E.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5E
+%USB\VID_054C.PID_0A5F.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5F
+%USB\VID_054C.PID_0A60.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A60
+%USB\VID_054C.PID_0A61.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A61
+
+; LG
+%USB\VID_1004.PID_61F1.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F1
+%USB\VID_1004.PID_61F2.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F2
+%USB\VID_1004.PID_61F3.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F3
+%USB\VID_1004.PID_61F4.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F4
+%USB\VID_1004.PID_61F5.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F5
+%USB\VID_1004.PID_61F6.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F6
+%USB\VID_1004.PID_61F7.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F7
+%USB\VID_1004.PID_61F8.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F8
+%USB\VID_1004.PID_61F9.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F9
+%USB\VID_1004.PID_61FA.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61FA
+
+; HTC
+%USB\VID_0BB4.PID_0C01.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C01
+%USB\VID_0BB4.PID_0C02.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C02
+%USB\VID_0BB4.PID_0C03.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C03
+%USB\VID_0BB4.PID_0C04.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C04
+%USB\VID_0BB4.PID_0C05.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C05
+%USB\VID_0BB4.PID_0C06.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C06
+%USB\VID_0BB4.PID_0C07.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C07
+%USB\VID_0BB4.PID_0C08.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C08
+%USB\VID_0BB4.PID_0C09.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C09
+%USB\VID_0BB4.PID_0C0A.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C0A
+%USB\VID_0BB4.PID_0F91.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F91
+%USB\VID_0BB4.PID_0F92.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F92
+%USB\VID_0BB4.PID_0F93.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F93
+%USB\VID_0BB4.PID_0F94.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F94
+
+; ASUS
+%USB\VID_0B05.PID_4DA1.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA1
+%USB\VID_0B05.PID_4DA2.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA2
+%USB\VID_0B05.PID_4DA3.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA3
+%USB\VID_0B05.PID_4DA4.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA4
+%USB\VID_0B05.PID_4DA5.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA5
+
+; ZTE
+%USB\VID_19D2.PID_1350.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1350
+%USB\VID_19D2.PID_1351.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1351
+%USB\VID_19D2.PID_1352.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1352
+%USB\VID_19D2.PID_1353.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1353
+%USB\VID_19D2.PID_1354.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1354
+%USB\VID_19D2.PID_1355.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1355
+%USB\VID_19D2.PID_1356.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1356
+%USB\VID_19D2.PID_1357.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1357
+%USB\VID_19D2.PID_1358.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1358
+%USB\VID_19D2.PID_1359.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1359
+%USB\VID_19D2.PID_FFFB.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFB
+%USB\VID_19D2.PID_FFFC.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFC
+%USB\VID_19D2.PID_FFFD.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFD
+%USB\VID_19D2.PID_FFFE.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFE
+%USB\VID_19D2.PID_FFFF.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFF
+
+; Lenovo
+%USB\VID_17EF.PID_7382.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7382
+%USB\VID_17EF.PID_7383.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7383
+%USB\VID_17EF.PID_7384.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7384
+%USB\VID_17EF.PID_7385.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7385
+%USB\VID_17EF.PID_7386.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7386
+%USB\VID_17EF.PID_7387.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7387
+
+; Meizu
+%USB\VID_2A45.PID_1001.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1001
+%USB\VID_2A45.PID_1002.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1002
+%USB\VID_2A45.PID_1003.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1003
+%USB\VID_2A45.PID_1004.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1004
+%USB\VID_2A45.PID_1005.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1005
+
+; Nubia/RedMagic
+%USB\VID_19D2.PID_2001.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2001
+%USB\VID_19D2.PID_2002.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2002
+%USB\VID_19D2.PID_2003.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2003
+%USB\VID_19D2.PID_2011.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2011
+%USB\VID_19D2.PID_2012.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2012
+%USB\VID_19D2.PID_2013.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2013
+%USB\VID_19D2.PID_2031.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2031
+%USB\VID_19D2.PID_2032.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2032
+%USB\VID_19D2.PID_2033.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2033
+
+; TCL/Alcatel
+%USB\VID_1BBB.PID_0001.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0001
+%USB\VID_1BBB.PID_0002.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0002
+%USB\VID_1BBB.PID_0003.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0003
+%USB\VID_1BBB.PID_0004.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0004
+%USB\VID_1BBB.PID_0005.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0005
+%USB\VID_1BBB.PID_0006.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0006
+
+; Generic Android (catch-all for common ADB interfaces)
+%USB\VID_18D1.PID_0001.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_0001
+%USB\VID_18D1.PID_4EE2.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE2
+
+[Google.NTamd64]
+; Google/Pixel
+%USB\VID_18D1.PID_4EE7.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE7
+%USB\VID_18D1.PID_4EE0.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE0
+%USB\VID_18D1.PID_D001.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D001
+%USB\VID_18D1.PID_D002.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D002
+%USB\VID_18D1.PID_4EE1.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE1
+%USB\VID_18D1.PID_D00D.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D00D
+%USB\VID_18D1.PID_D00E.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_D00E
+
+; Samsung
+%USB\VID_04E8.PID_6863.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6863
+%USB\VID_04E8.PID_6860.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6860
+%USB\VID_04E8.PID_685C.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_685C
+%USB\VID_04E8.PID_6864.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6864
+%USB\VID_04E8.PID_6865.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6865
+%USB\VID_04E8.PID_6866.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6866
+%USB\VID_04E8.PID_6867.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6867
+%USB\VID_04E8.PID_6889.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6889
+%USB\VID_04E8.PID_689E.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_689E
+%USB\VID_04E8.PID_68A6.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68A6
+%USB\VID_04E8.PID_68C3.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68C3
+%USB\VID_04E8.PID_68D9.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68D9
+%USB\VID_04E8.PID_68EE.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68EE
+%USB\VID_04E8.PID_68F1.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_68F1
+%USB\VID_04E8.PID_6A8C.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8C
+%USB\VID_04E8.PID_6A8D.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8D
+%USB\VID_04E8.PID_6A8E.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8E
+%USB\VID_04E8.PID_6A8F.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A8F
+%USB\VID_04E8.PID_6A90.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A90
+%USB\VID_04E8.PID_6A91.DeviceDesc%     = USB_Install, USB\VID_04E8&PID_6A91
+
+; Xiaomi/Redmi
+%USB\VID_2717.PID_FF80.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF80
+%USB\VID_2717.PID_FF81.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF81
+%USB\VID_2717.PID_FF82.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF82
+%USB\VID_2717.PID_FF83.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF83
+%USB\VID_2717.PID_FF84.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF84
+%USB\VID_2717.PID_FF85.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF85
+%USB\VID_2717.PID_FF86.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF86
+%USB\VID_2717.PID_FF88.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF88
+%USB\VID_2717.PID_FF89.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF89
+%USB\VID_2717.PID_FF8A.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8A
+%USB\VID_2717.PID_FF8B.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8B
+%USB\VID_2717.PID_FF8C.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8C
+%USB\VID_2717.PID_FF8D.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8D
+%USB\VID_2717.PID_FF8E.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8E
+%USB\VID_2717.PID_FF8F.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF8F
+%USB\VID_2717.PID_FF90.DeviceDesc%     = USB_Install, USB\VID_2717&PID_FF90
+
+; Huawei/Honor
+%USB\VID_12D1.PID_1079.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1079
+%USB\VID_12D1.PID_107E.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_107E
+%USB\VID_12D1.PID_107F.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_107F
+%USB\VID_12D1.PID_1080.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1080
+%USB\VID_12D1.PID_1081.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1081
+%USB\VID_12D1.PID_1082.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1082
+%USB\VID_12D1.PID_1083.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1083
+%USB\VID_12D1.PID_1084.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1084
+%USB\VID_12D1.PID_1085.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1085
+%USB\VID_12D1.PID_1086.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1086
+%USB\VID_12D1.PID_1087.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1087
+%USB\VID_12D1.PID_1088.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1088
+%USB\VID_12D1.PID_1089.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1089
+%USB\VID_12D1.PID_1090.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1090
+%USB\VID_12D1.PID_1091.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1091
+%USB\VID_12D1.PID_1092.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1092
+%USB\VID_12D1.PID_1094.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1094
+%USB\VID_12D1.PID_1096.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1096
+%USB\VID_12D1.PID_1097.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1097
+%USB\VID_12D1.PID_1098.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_1098
+%USB\VID_12D1.PID_109A.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109A
+%USB\VID_12D1.PID_109B.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109B
+%USB\VID_12D1.PID_109C.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109C
+%USB\VID_12D1.PID_109D.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_109D
+%USB\VID_12D1.PID_10A3.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_10A3
+%USB\VID_12D1.PID_10A5.DeviceDesc%     = USB_Install, USB\VID_12D1&PID_10A5
+
+; OPPO/OnePlus/Realme
+%USB\VID_22D9.PID_2801.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2801
+%USB\VID_22D9.PID_2802.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2802
+%USB\VID_22D9.PID_2803.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2803
+%USB\VID_22D9.PID_2804.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2804
+%USB\VID_22D9.PID_2805.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2805
+%USB\VID_22D9.PID_2806.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2806
+%USB\VID_22D9.PID_2807.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2807
+%USB\VID_22D9.PID_2808.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2808
+%USB\VID_22D9.PID_2809.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_2809
+%USB\VID_22D9.PID_280A.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_280A
+%USB\VID_22D9.PID_280B.DeviceDesc%     = USB_Install, USB\VID_22D9&PID_280B
+%USB\VID_2B4C.PID_8001.DeviceDesc%     = USB_Install, USB\VID_2B4C&PID_8001
+%USB\VID_2B4C.PID_8002.DeviceDesc%     = USB_Install, USB\VID_2B4C&PID_8002
+%USB\VID_2B4C.PID_8003.DeviceDesc%     = USB_Install, USB\VID_2B4C&PID_8003
+
+; vivo/iQOO
+%USB\VID_2D95.PID_6000.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6000
+%USB\VID_2D95.PID_6001.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6001
+%USB\VID_2D95.PID_6002.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6002
+%USB\VID_2D95.PID_6003.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6003
+%USB\VID_2D95.PID_6004.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6004
+%USB\VID_2D95.PID_6005.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6005
+%USB\VID_2D95.PID_6006.DeviceDesc%     = USB_Install, USB\VID_2D95&PID_6006
+
+; Motorola
+%USB\VID_22B8.PID_2E81.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E81
+%USB\VID_22B8.PID_2E82.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E82
+%USB\VID_22B8.PID_2E83.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E83
+%USB\VID_22B8.PID_2E85.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E85
+%USB\VID_22B8.PID_2E86.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E86
+%USB\VID_22B8.PID_2E87.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E87
+%USB\VID_22B8.PID_2E88.DeviceDesc%     = USB_Install, USB\VID_22B8&PID_2E88
+
+; Sony
+%USB\VID_054C.PID_0A5C.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5C
+%USB\VID_054C.PID_0A5D.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5D
+%USB\VID_054C.PID_0A5E.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5E
+%USB\VID_054C.PID_0A5F.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A5F
+%USB\VID_054C.PID_0A60.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A60
+%USB\VID_054C.PID_0A61.DeviceDesc%     = USB_Install, USB\VID_054C&PID_0A61
+
+; LG
+%USB\VID_1004.PID_61F1.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F1
+%USB\VID_1004.PID_61F2.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F2
+%USB\VID_1004.PID_61F3.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F3
+%USB\VID_1004.PID_61F4.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F4
+%USB\VID_1004.PID_61F5.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F5
+%USB\VID_1004.PID_61F6.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F6
+%USB\VID_1004.PID_61F7.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F7
+%USB\VID_1004.PID_61F8.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F8
+%USB\VID_1004.PID_61F9.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61F9
+%USB\VID_1004.PID_61FA.DeviceDesc%     = USB_Install, USB\VID_1004&PID_61FA
+
+; HTC
+%USB\VID_0BB4.PID_0C01.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C01
+%USB\VID_0BB4.PID_0C02.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C02
+%USB\VID_0BB4.PID_0C03.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C03
+%USB\VID_0BB4.PID_0C04.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C04
+%USB\VID_0BB4.PID_0C05.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C05
+%USB\VID_0BB4.PID_0C06.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C06
+%USB\VID_0BB4.PID_0C07.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C07
+%USB\VID_0BB4.PID_0C08.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C08
+%USB\VID_0BB4.PID_0C09.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C09
+%USB\VID_0BB4.PID_0C0A.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0C0A
+%USB\VID_0BB4.PID_0F91.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F91
+%USB\VID_0BB4.PID_0F92.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F92
+%USB\VID_0BB4.PID_0F93.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F93
+%USB\VID_0BB4.PID_0F94.DeviceDesc%     = USB_Install, USB\VID_0BB4&PID_0F94
+
+; ASUS
+%USB\VID_0B05.PID_4DA1.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA1
+%USB\VID_0B05.PID_4DA2.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA2
+%USB\VID_0B05.PID_4DA3.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA3
+%USB\VID_0B05.PID_4DA4.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA4
+%USB\VID_0B05.PID_4DA5.DeviceDesc%     = USB_Install, USB\VID_0B05&PID_4DA5
+
+; ZTE
+%USB\VID_19D2.PID_1350.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1350
+%USB\VID_19D2.PID_1351.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1351
+%USB\VID_19D2.PID_1352.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1352
+%USB\VID_19D2.PID_1353.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1353
+%USB\VID_19D2.PID_1354.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1354
+%USB\VID_19D2.PID_1355.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1355
+%USB\VID_19D2.PID_1356.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1356
+%USB\VID_19D2.PID_1357.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1357
+%USB\VID_19D2.PID_1358.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1358
+%USB\VID_19D2.PID_1359.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_1359
+%USB\VID_19D2.PID_FFFB.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFB
+%USB\VID_19D2.PID_FFFC.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFC
+%USB\VID_19D2.PID_FFFD.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFD
+%USB\VID_19D2.PID_FFFE.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFE
+%USB\VID_19D2.PID_FFFF.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_FFFF
+
+; Lenovo
+%USB\VID_17EF.PID_7382.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7382
+%USB\VID_17EF.PID_7383.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7383
+%USB\VID_17EF.PID_7384.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7384
+%USB\VID_17EF.PID_7385.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7385
+%USB\VID_17EF.PID_7386.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7386
+%USB\VID_17EF.PID_7387.DeviceDesc%     = USB_Install, USB\VID_17EF&PID_7387
+
+; Meizu
+%USB\VID_2A45.PID_1001.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1001
+%USB\VID_2A45.PID_1002.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1002
+%USB\VID_2A45.PID_1003.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1003
+%USB\VID_2A45.PID_1004.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1004
+%USB\VID_2A45.PID_1005.DeviceDesc%     = USB_Install, USB\VID_2A45&PID_1005
+
+; Nubia/RedMagic
+%USB\VID_19D2.PID_2001.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2001
+%USB\VID_19D2.PID_2002.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2002
+%USB\VID_19D2.PID_2003.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2003
+%USB\VID_19D2.PID_2011.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2011
+%USB\VID_19D2.PID_2012.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2012
+%USB\VID_19D2.PID_2013.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2013
+%USB\VID_19D2.PID_2031.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2031
+%USB\VID_19D2.PID_2032.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2032
+%USB\VID_19D2.PID_2033.DeviceDesc%     = USB_Install, USB\VID_19D2&PID_2033
+
+; TCL/Alcatel
+%USB\VID_1BBB.PID_0001.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0001
+%USB\VID_1BBB.PID_0002.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0002
+%USB\VID_1BBB.PID_0003.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0003
+%USB\VID_1BBB.PID_0004.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0004
+%USB\VID_1BBB.PID_0005.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0005
+%USB\VID_1BBB.PID_0006.DeviceDesc%     = USB_Install, USB\VID_1BBB&PID_0006
+
+; Generic Android
+%USB\VID_18D1.PID_0001.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_0001
+%USB\VID_18D1.PID_4EE2.DeviceDesc%     = USB_Install, USB\VID_18D1&PID_4EE2
+
+[USB_Install]
+Include = setupapi.inf
+Needs = ClassInstall32.Services
+
+[USB_Install.Services]
+Include = setupapi.inf
+Needs = ClassInstall32.Services
+
+[USB_Install.Wdf]
+KmdfService = WINUSB, WinUSB_Install
+
+[WinUSB_Install]
+KmdfLibraryVersion = 1.11
+
+[WinUSB_Install.Services]
+AddService = WinUSB, 0x00000002, WinUSB_ServiceInstaller
+
+[WinUSB_ServiceInstaller]
+DisplayName    = %WinUSB_SvcDesc%
+ServiceType    = 1
+StartType      = 3
+ErrorControl   = 1
+ServiceBinary  = %12%\WinUSB.sys
+
+[WinUSB_Install.HW]
+AddReg = WinUSB_AddReg
+
+[WinUSB_AddReg]
+HKR,,NTMPDriver,,%12%\WinUSB.sys
+HKR,,DeviceInterfaceGUID,,"{0EAD355B-A7E8-4F6F-82E7-4312C410EF2E}"
+HKR,,"Parameters","MaximumPacketSize",0x10001,4096
+
+[USB_Install.CopyFiles]
+AdbWinApi.dll
+AdbWinUsbApi.dll
+
+[USB_Install.Devices]
+AddService = AndroidUsbDeviceClass,, AndroidUsbDeviceClass_Service_Inst
+
+[AndroidUsbDeviceClass_Service_Inst]
+DisplayName    = %AndroidUsbDeviceClass_Service%
+ServiceType    = 1
+StartType      = 3
+ErrorControl   = 0
+ServiceBinary  = %12%\AndroidUsbDeviceClass.sys
+
+[Strings]
+ProviderName                    = "ERS Tech"
+WinUSB_SvcDesc                  = "Android ADB Interface (ERS Tech)"
+AndroidUsbDeviceClass_Service   = "Android USB Device Class"
+DiskName                        = "ERS Tech AV Killer Driver"
+
+; Google/Pixel
+USB\VID_18D1.PID_4EE7.DeviceDesc = "Google Pixel ADB"
+USB\VID_18D1.PID_4EE0.DeviceDesc = "Google ADB"
+USB\VID_18D1.PID_D001.DeviceDesc = "Google Nexus ADB"
+USB\VID_18D1.PID_D002.DeviceDesc = "Google Nexus ADB"
+USB\VID_18D1.PID_4EE1.DeviceDesc = "Google ADB"
+USB\VID_18D1.PID_D00D.DeviceDesc = "Google ADB"
+USB\VID_18D1.PID_D00E.DeviceDesc = "Google ADB"
+USB\VID_18D1.PID_0001.DeviceDesc = "Generic Android ADB"
+USB\VID_18D1.PID_4EE2.DeviceDesc = "Generic Android ADB"
+
+; Samsung
+USB\VID_04E8.PID_6863.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6860.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_685C.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6864.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6865.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6866.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6867.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6889.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_689E.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_68A6.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_68C3.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_68D9.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_68EE.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_68F1.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6A8C.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6A8D.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6A8E.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6A8F.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6A90.DeviceDesc = "Samsung Android ADB"
+USB\VID_04E8.PID_6A91.DeviceDesc = "Samsung Android ADB"
+
+; Xiaomi/Redmi
+USB\VID_2717.PID_FF80.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF81.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF82.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF83.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF84.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF85.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF86.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF88.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF89.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF8A.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF8B.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF8C.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF8D.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF8E.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF8F.DeviceDesc = "Xiaomi Android ADB"
+USB\VID_2717.PID_FF90.DeviceDesc = "Xiaomi Android ADB"
+
+; Huawei/Honor
+USB\VID_12D1.PID_1079.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_107E.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_107F.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1080.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1081.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1082.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1083.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1084.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1085.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1086.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1087.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1088.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1089.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1090.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1091.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1092.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1094.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1096.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1097.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_1098.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_109A.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_109B.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_109C.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_109D.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_10A3.DeviceDesc = "Huawei Android ADB"
+USB\VID_12D1.PID_10A5.DeviceDesc = "Huawei Android ADB"
+
+; OPPO/OnePlus/Realme
+USB\VID_22D9.PID_2801.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2802.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2803.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2804.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2805.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2806.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2807.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2808.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_2809.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_280A.DeviceDesc = "OPPO Android ADB"
+USB\VID_22D9.PID_280B.DeviceDesc = "OPPO Android ADB"
+USB\VID_2B4C.PID_8001.DeviceDesc = "OnePlus Android ADB"
+USB\VID_2B4C.PID_8002.DeviceDesc = "OnePlus Android ADB"
+USB\VID_2B4C.PID_8003.DeviceDesc = "OnePlus Android ADB"
+
+; vivo/iQOO
+USB\VID_2D95.PID_6000.DeviceDesc = "vivo Android ADB"
+USB\VID_2D95.PID_6001.DeviceDesc = "vivo Android ADB"
+USB\VID_2D95.PID_6002.DeviceDesc = "vivo Android ADB"
+USB\VID_2D95.PID_6003.DeviceDesc = "vivo Android ADB"
+USB\VID_2D95.PID_6004.DeviceDesc = "vivo Android ADB"
+USB\VID_2D95.PID_6005.DeviceDesc = "vivo Android ADB"
+USB\VID_2D95.PID_6006.DeviceDesc = "vivo Android ADB"
+
+; Motorola
+USB\VID_22B8.PID_2E81.DeviceDesc = "Motorola Android ADB"
+USB\VID_22B8.PID_2E82.DeviceDesc = "Motorola Android ADB"
+USB\VID_22B8.PID_2E83.DeviceDesc = "Motorola Android ADB"
+USB\VID_22B8.PID_2E85.DeviceDesc = "Motorola Android ADB"
+USB\VID_22B8.PID_2E86.DeviceDesc = "Motorola Android ADB"
+USB\VID_22B8.PID_2E87.DeviceDesc = "Motorola Android ADB"
+USB\VID_22B8.PID_2E88.DeviceDesc = "Motorola Android ADB"
+
+; Sony
+USB\VID_054C.PID_0A5C.DeviceDesc = "Sony Android ADB"
+USB\VID_054C.PID_0A5D.DeviceDesc = "Sony Android ADB"
+USB\VID_054C.PID_0A5E.DeviceDesc = "Sony Android ADB"
+USB\VID_054C.PID_0A5F.DeviceDesc = "Sony Android ADB"
+USB\VID_054C.PID_0A60.DeviceDesc = "Sony Android ADB"
+USB\VID_054C.PID_0A61.DeviceDesc = "Sony Android ADB"
+
+; LG
+USB\VID_1004.PID_61F1.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F2.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F3.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F4.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F5.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F6.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F7.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F8.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61F9.DeviceDesc = "LG Android ADB"
+USB\VID_1004.PID_61FA.DeviceDesc = "LG Android ADB"
+
+; HTC
+USB\VID_0BB4.PID_0C01.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C02.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C03.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C04.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C05.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C06.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C07.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C08.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C09.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0C0A.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0F91.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0F92.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0F93.DeviceDesc = "HTC Android ADB"
+USB\VID_0BB4.PID_0F94.DeviceDesc = "HTC Android ADB"
+
+; ASUS
+USB\VID_0B05.PID_4DA1.DeviceDesc = "ASUS Android ADB"
+USB\VID_0B05.PID_4DA2.DeviceDesc = "ASUS Android ADB"
+USB\VID_0B05.PID_4DA3.DeviceDesc = "ASUS Android ADB"
+USB\VID_0B05.PID_4DA4.DeviceDesc = "ASUS Android ADB"
+USB\VID_0B05.PID_4DA5.DeviceDesc = "ASUS Android ADB"
+
+; ZTE
+USB\VID_19D2.PID_1350.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1351.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1352.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1353.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1354.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1355.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1356.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1357.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1358.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_1359.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_FFFB.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_FFFC.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_FFFD.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_FFFE.DeviceDesc = "ZTE Android ADB"
+USB\VID_19D2.PID_FFFF.DeviceDesc = "ZTE Android ADB"
+
+; Lenovo
+USB\VID_17EF.PID_7382.DeviceDesc = "Lenovo Android ADB"
+USB\VID_17EF.PID_7383.DeviceDesc = "Lenovo Android ADB"
+USB\VID_17EF.PID_7384.DeviceDesc = "Lenovo Android ADB"
+USB\VID_17EF.PID_7385.DeviceDesc = "Lenovo Android ADB"
+USB\VID_17EF.PID_7386.DeviceDesc = "Lenovo Android ADB"
+USB\VID_17EF.PID_7387.DeviceDesc = "Lenovo Android ADB"
+
+; Meizu
+USB\VID_2A45.PID_1001.DeviceDesc = "Meizu Android ADB"
+USB\VID_2A45.PID_1002.DeviceDesc = "Meizu Android ADB"
+USB\VID_2A45.PID_1003.DeviceDesc = "Meizu Android ADB"
+USB\VID_2A45.PID_1004.DeviceDesc = "Meizu Android ADB"
+USB\VID_2A45.PID_1005.DeviceDesc = "Meizu Android ADB"
+
+; Nubia/RedMagic
+USB\VID_19D2.PID_2001.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2002.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2003.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2011.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2012.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2013.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2031.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2032.DeviceDesc = "Nubia Android ADB"
+USB\VID_19D2.PID_2033.DeviceDesc = "Nubia Android ADB"
+
+; TCL/Alcatel
+USB\VID_1BBB.PID_0001.DeviceDesc = "TCL Android ADB"
+USB\VID_1BBB.PID_0002.DeviceDesc = "TCL Android ADB"
+USB\VID_1BBB.PID_0003.DeviceDesc = "TCL Android ADB"
+USB\VID_1BBB.PID_0004.DeviceDesc = "TCL Android ADB"
+USB\VID_1BBB.PID_0005.DeviceDesc = "TCL Android ADB"
+USB\VID_1BBB.PID_0006.DeviceDesc = "TCL Android ADB"
