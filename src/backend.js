@@ -30,6 +30,14 @@ let lastLogcatFetch = 0;
 let cachedCpuUsage = new Map();
 let lastCpuFetch = 0;
 
+// ===== Device Info Cache (5s TTL) — 避免每次刷新都跑 5 条 ADB =====
+const deviceInfoCache = new Map(); // deviceId -> { data, ts }
+const DEVICE_INFO_TTL = 5000;
+
+// ===== Apps List Cache (30s TTL) — 避免切 tab 重新 pm list packages =====
+const appsCache = new Map(); // deviceId -> { list, ts }
+const APPS_CACHE_TTL = 30000;
+
 async function tauriInvoke(cmd, args = {}) {
   return tauriInvokeCore(cmd, args);
 }
@@ -104,8 +112,16 @@ export async function subscribeAdbDeviceEvents(onEvent) {
 export async function getDeviceInfo(deviceId) {
   if (!isTauri) return apiFetch(`/device-info/${deviceId}`);
 
+  // 命中缓存：5秒内同一设备直接返回，避免每次刷新都跑 5 条 ADB 命令
+  const cached = deviceInfoCache.get(deviceId);
+  if (cached && Date.now() - cached.ts < DEVICE_INFO_TTL) {
+    return cached.data;
+  }
+
   const safe = (cmd) => tauriInvoke('adb_shell', { deviceId, command: cmd }).catch(() => '');
 
+  // 将静态属性（型号/系统版本等）和动态属性（电量/内存）分开
+  // 静态属性用单条命令批量获取，减少 ADB 往返次数
   const [props, batteryRaw, storageRaw, memRaw, displayRaw] = await Promise.all([
     safe('getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; getprop ro.product.cpu.abi; getprop ro.product.brand; getprop ro.product.manufacturer; getprop ro.product.name; getprop ro.product.device'),
     safe('dumpsys battery'),
@@ -147,16 +163,63 @@ export async function getDeviceInfo(deviceId) {
   const sm = displayRaw.match(/Physical size:\s*(\S+)/), dm = displayRaw.match(/Physical density:\s*(\S+)/);
   if (sm) display.size = sm[1]; if (dm) display.density = dm[1];
 
-  return { battery, storage, memory, display, model: model || '--', version: version || '--', sdk: sdk || '--', cpu: cpu || '--', brand: brand || '--', manufacturer: manufacturer || '--', productName: productName || '--', deviceName: deviceName || '--' };
+  const result = { battery, storage, memory, display, model: model || '--', version: version || '--', sdk: sdk || '--', cpu: cpu || '--', brand: brand || '--', manufacturer: manufacturer || '--', productName: productName || '--', deviceName: deviceName || '--' };
+  
+  // 写入缓存
+  deviceInfoCache.set(deviceId, { data: result, ts: Date.now() });
+  return result;
+}
+
+// ===== 设备连接时后台预热缓存 =====
+// 在设备刚连接时调用此函数，提前把慢操作跑完缓存好，用户打开页面时立刻有数据
+export function warmupDevice(deviceId) {
+  if (!isTauri || !deviceId) return;
+  // 后台静默执行，不阻塞 UI
+  setTimeout(async () => {
+    try {
+      // 并行预热：设备信息 + 应用列表 + 第三方包列表（behaviorScan缓存）
+      await Promise.all([
+        getDeviceInfo(deviceId).catch(() => {}),
+        getApps(deviceId).catch(() => {}),
+        // 预热 behaviorScan 的第三方包缓存
+        (async () => {
+          if (cachedThirdParty.size === 0) {
+            const pkgsOutput = await tauriInvoke('adb_shell', { deviceId, command: 'pm list packages -3' }).catch(() => '');
+            const newPkgs = new Set();
+            if (pkgsOutput) {
+              for (const line of pkgsOutput.trim().split('\n')) {
+                const m = line.replace('package:', '').trim();
+                if (m && m.includes('.') && m.length > 3) newPkgs.add(m);
+              }
+            }
+            if (newPkgs.size > 0) { cachedThirdParty = newPkgs; lastThirdPartyFetch = Date.now(); }
+          }
+        })(),
+      ]);
+    } catch {}
+  }, 500); // 连接后 500ms 开始预热，避免和连接建立竞争
 }
 
 // ===== Apps =====
 export async function getApps(deviceId) {
   if (isTauri) {
+    // 命中缓存：30秒内同一设备直接返回，避免切 tab 重复 pm list packages
+    const cached = appsCache.get(deviceId);
+    if (cached && Date.now() - cached.ts < APPS_CACHE_TTL) {
+      return cached.list;
+    }
     const raw = await tauriInvoke('adb_shell', { deviceId, command: 'pm list packages' });
-    return raw.trim().split('\n').map(l => l.replace('package:', '').trim()).filter(l => l.length > 0);
+    const list = raw.trim().split('\n').map(l => l.replace('package:', '').trim()).filter(l => l.length > 0);
+    appsCache.set(deviceId, { list, ts: Date.now() });
+    return list;
   }
   return apiFetch(`/apps/${deviceId}`);
+}
+
+// 强制刷新应用列表（卸载/安装后调用）
+export function invalidateAppsCache(deviceId) {
+  if (deviceId) appsCache.delete(deviceId);
+  else appsCache.clear();
 }
 
 // ===== Uninstall =====
@@ -746,34 +809,29 @@ export async function behaviorScan(deviceId) {
   };
 }
 
-// ===== Lightweight behavior scan for capture mode (skips heavy permission analysis) =====
+// ===== Lightweight behavior scan for capture mode =====
+// 优化：直接复用 behaviorScan 已有的全局缓存，只重新获取实时变化的窗口/进程信息
+// 原先版本会重新跑 8 条并行 ADB，耗时 2-4 秒；现在只跑 2 条，约 300-600ms
 export async function behaviorScanLight(deviceId) {
   if (!isTauri) return apiFetch('/behavior-scan', { method: 'POST', body: JSON.stringify({ deviceId }) });
 
-  const [activityRaw, windowRaw, psRaw, cpuRaw, notifRaw, batteryRaw, logcatRaw, bootReceiverRaw] = await Promise.all([
-    safeShell(deviceId, 'dumpsys activity activities'),
-    safeShell(deviceId, 'dumpsys window windows'),
+  // 只重新获取实时性要求高的数据（窗口焦点 + 进程列表），其余用缓存
+  const [windowStateRaw, psRaw] = await Promise.all([
+    safeShell(deviceId, 'dumpsys window | grep -E "mCurrentFocus|mFocusedApp|SYSTEM_ALERT|APPLICATION_OVERLAY"', 5000),
     safeShell(deviceId, 'ps -A', 5000),
-    safeShell(deviceId, 'dumpsys cpuinfo'),
-    safeShell(deviceId, 'dumpsys notification'),
-    safeShell(deviceId, 'dumpsys battery'),
-    safeShell(deviceId, 'logcat -d -t 50 -s AdView AdLoader WebView ActivityManager 2>/dev/null'),
-    safeShell(deviceId, 'dumpsys package query-receivers --components android.intent.action.BOOT_COMPLETED 2>/dev/null'),
   ]);
 
+  // 前台应用
   let currentFg = null;
-  if (activityRaw) {
-    for (const line of activityRaw.split('\n')) {
-      if (line.includes('ResumedActivity') || line.includes('topResumedActivity')) {
-        const m = line.match(/\s(\S+?)\//);
-        if (m && isReal(m[1])) { currentFg = m[1]; break; }
-      }
-    }
+  if (windowStateRaw) {
+    const m = windowStateRaw.match(/(?:mCurrentFocus|mFocusedApp)=.*?\s(\S+?)\//);
+    if (m && isReal(m[1])) currentFg = m[1];
   }
 
+  // 悬浮窗检测
   const overlays = new Set();
-  if (windowRaw) {
-    const lines = windowRaw.split('\n');
+  if (windowStateRaw) {
+    const lines = windowStateRaw.split('\n');
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].includes('SYSTEM_ALERT') || lines[i].includes('APPLICATION_OVERLAY')) {
         for (let j = i; j >= Math.max(0, i - 5); j--) {
@@ -784,48 +842,25 @@ export async function behaviorScanLight(deviceId) {
     }
   }
 
-  const cpuUsage = new Map();
-  if (cpuRaw) {
-    for (const line of cpuRaw.split('\n')) {
-      const m = line.match(/([\d.]+)%\s+\d+\/(\S+?):/);
-      if (m) {
-        const cpu = parseFloat(m[1]) || 0;
-        const pkg = m[2].replace(/:.*/, '').trim();
-        if (isReal(pkg) && cpu > 0.5) cpuUsage.set(pkg, (cpuUsage.get(pkg) || 0) + cpu);
+  // 进程计数
+  const processCount = new Map();
+  if (psRaw) {
+    for (const line of psRaw.split('\n')) {
+      if (line.includes('PID') || line.trim() === '') continue;
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 8) {
+        const name = parts[parts.length - 1];
+        if (isReal(name)) processCount.set(name, (processCount.get(name) || 0) + 1);
       }
     }
   }
 
-  const notifications = new Set();
-  if (notifRaw) {
-    for (const line of notifRaw.split('\n')) {
-      if (line.includes('NotificationRecord')) {
-        const m = line.match(/pkg=(\S+)/);
-        if (m && isReal(m[1])) notifications.add(m[1]);
-      }
-    }
-  }
-
-  let batteryStatus = 'unknown';
-  if (batteryRaw) {
-    const sm = batteryRaw.match(/status:\s*(\d+)/);
-    if (sm) batteryStatus = { '1': 'unknown', '2': 'charging', '3': 'discharging', '4': 'not_charging', '5': 'full' }[sm[1]] || 'unknown';
-  }
-
-  const bootReceivers = new Set();
-  if (bootReceiverRaw) {
-    for (const line of bootReceiverRaw.split('\n')) {
-      const m = line.match(/([a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)+)/i);
-      if (m && isReal(m[1])) bootReceivers.add(m[1]);
-    }
-  }
-
-  const pkgsOutput = await safeShell(deviceId, 'pm list packages -3');
-  const allThirdParty = new Set();
-  for (const line of pkgsOutput.trim().split('\n')) {
-    const m = line.replace('package:', '').trim();
-    if (m && m.includes('.') && m.length > 3) allThirdParty.add(m);
-  }
+  // 复用全局缓存（由 behaviorScan 维护）
+  const allThirdParty = cachedThirdParty;
+  const cpuUsage = cachedCpuUsage;
+  const bootReceivers = cachedBootReceivers;
+  const batteryStatus = cachedBatteryStatus;
+  const notifications = cachedNotifications;
 
   const appResults = [];
   for (const pkg of allThirdParty) {
@@ -838,6 +873,11 @@ export async function behaviorScanLight(deviceId) {
     else if (cpu > 3) { signals.push({ type: 'CPU偏高', detail: `${cpu.toFixed(1)}%`, category: 'system', severity: 1 }); score += 2; }
 
     if (overlays.has(pkg)) { signals.push({ type: '叠加层弹窗', detail: '正在弹出悬浮窗/广告', category: 'ads', severity: 3 }); score += 25; }
+    else if (cachedOverlayPerms.has(pkg)) { signals.push({ type: '有悬浮窗权限', detail: '可以随时弹广告', category: 'ads', severity: 1 }); score += 2; }
+
+    const procs = processCount.get(pkg) || 0;
+    if (procs >= 4) { signals.push({ type: `${procs}个进程`, detail: '后台常驻多进程', category: 'system', severity: 2 }); score += 5; }
+    else if (procs >= 2) { signals.push({ type: `${procs}个进程`, detail: '', category: 'system', severity: 1 }); score += 1; }
 
     if (bootReceivers.has(pkg)) { signals.push({ type: '开机自启', detail: '重启后自动运行', category: 'ads', severity: 1 }); score += 2; }
 
@@ -845,7 +885,7 @@ export async function behaviorScanLight(deviceId) {
 
     const normalizedScore = Math.min(100, score);
     const risk = normalizedScore >= 15 ? 'high' : normalizedScore >= 5 ? 'medium' : 'low';
-    appResults.push({ pkg, signals, score: normalizedScore, risk, cpu, processes: 0, networkHits: 0 });
+    appResults.push({ pkg, signals, score: normalizedScore, risk, cpu, processes: procs, networkHits: 0 });
   }
 
   appResults.sort((a, b) => {

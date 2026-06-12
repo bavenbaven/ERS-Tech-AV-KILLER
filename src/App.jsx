@@ -14,7 +14,7 @@ import './index.css';
 
 const SHOP_URL = 'https://shopee.com.my/shop/146154950';
 const TIKTOK_URL = 'https://www.tiktok.com/@bavenyang?_r=1&_t=ZS-96Mu2A5wTzM';
-const SPLASH_SECONDS = 10;
+const SPLASH_SECONDS = 3;
 
 function SplashScreen({ onSkip }) {
   const [countdown, setCountdown] = useState(SPLASH_SECONDS);

@@ -1,6 +1,6 @@
 {
   "productName": "ERS Tech AV Killer",
-  "version": "1.30.0",
+  "version": "1.50.0",
   "identifier": "com.erstech.avkiller",
   "build": {
     "frontendDist": "../dist",
@@ -27,15 +27,13 @@
   },
   "plugins": {
     "updater": {
-      "endpoints": ["https://raw.githubusercontent.com/bavenbaven/ERS-Tech-AV-KILLER/main/VERSION.json"],
-      "pubkey": ""
+      "endpoints": [
+        "https://cdn.jsdelivr.net/gh/bavenbaven/ERS-Tech-AV-KILLER@main/VERSION.json",
+        "https://raw.githubusercontent.com/bavenbaven/ERS-Tech-AV-KILLER/main/VERSION.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3QTJFNDRGMjE5RDI3ODYKUldTR0o1MGhUK1NpZDI5UVlNUVFTOXdCQUxnbDRtL1dIazlJQVdtNlJRTUxNZVh4N25qV0xaWXYK"
     },
-    "fs": {
-      "scope": {
-        "allow": ["$APPDATA/**", "$DOWNLOAD/**", "$DESKTOP/**"],
-        "deny": []
-      }
-    }
+    "fs": {}
   },
   "bundle": {
     "active": true,

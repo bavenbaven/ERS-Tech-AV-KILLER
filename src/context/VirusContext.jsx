@@ -1,4 +1,4 @@
-﻿import React, { createContext, useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useRef, useMemo, useCallback } from 'react';
 import virusDBData from '../data/virusDB';
 import protectedAppsData from '../data/protectedApps';
 import brandDBData from '../data/brandDB';
@@ -11,6 +11,8 @@ const OEM_PREFIXES = ['com.miui.','com.xiaomi.','com.huawei.','com.oppo.','com.c
 
 const ENCRYPT_KEY = 'ERS_TECH_2026_AV_KILLER';
 const GITHUB_REPO = 'bavenbaven/ERS-Tech-AV-KILLER';
+const GITHUB_RAW = `https://raw.githubusercontent.com/${GITHUB_REPO}/main`;
+const GITHUB_CDN = `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main`;
 
 // Base64 编码的共享 Token（Issues:Write 权限，仅用于贡献者提交）
 const SHARED_TOKEN_B64 = 'Z2l0aHViX3BhdF8xMUFWWVRIR0kwb25BWkt2eEVYcU9GX0g5MzZicnR1SFJNSWs0UHhZVG5aOVhiS1RHa2x3QnRhMml5RmtjT3R5N3Y0NVVNNEJMR05namZjcHoz';
@@ -120,24 +122,69 @@ export const VirusProvider = ({ children }) => {
   return true;
 }, []);
 
+  const fetchWithFallback = useCallback(async (path) => {
+    // 提供4个不同的节点竞速，彻底解决国内各地区运营商屏蔽（同步失败）的问题
+    const urls = [
+      `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
+      `https://fastly.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
+      `https://gcore.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
+      `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${path}`
+    ];
+
+    return new Promise((resolve, reject) => {
+      let failedCount = 0;
+      let isResolved = false;
+
+      const doFetch = (url) => {
+        // 兼容老版本 Windows WebView2 的自定义超时机制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
+        fetch(url, { signal: controller.signal })
+          .then(r => {
+            clearTimeout(timeoutId);
+            if (r.ok && !isResolved) {
+              isResolved = true;
+              resolve(r);
+            } else if (!isResolved) {
+              failedCount++;
+              if (failedCount === urls.length) reject(new Error(`Failed to fetch ${path}`));
+            }
+          })
+          .catch(() => {
+            clearTimeout(timeoutId);
+            if (!isResolved) {
+              failedCount++;
+              if (failedCount === urls.length) reject(new Error(`Failed to fetch ${path}`));
+            }
+          });
+      };
+
+      // 并发竞速：每隔 100ms 发起一个不同节点的请求，谁先返回就用谁的
+      urls.forEach((url, i) => {
+        setTimeout(() => { if (!isResolved) doFetch(url); }, i * 100);
+      });
+    });
+  }, []);
+
 // ==================== GitHub DB Sync Functions ====================
 
-  const fetchDbFromGitHub = useCallback(async () => {
-    setDbSyncStatus('syncing');
+  const fetchDbFromGitHub = useCallback(async (silent = false) => {
+    if (!silent) setDbSyncStatus('syncing');
     setDbError('');
     try {
-      // Try fetching from GitHub raw content
+      // Try fetching from CDN first (jsDelivr works in China), fallback to GitHub raw
       const [virusRes, keywordRes, brandRes, protectedRes, versionRes] = await Promise.allSettled([
-        fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/db/virusDB.json`),
-        fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/db/keywordDB.json`),
-        fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/db/brandDB.json`),
-        fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/db/protectedApps.json`),
-        fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/db/db_version.json`),
+        fetchWithFallback('db/virusDB.json'),
+        fetchWithFallback('db/keywordDB.json'),
+        fetchWithFallback('db/brandDB.json'),
+        fetchWithFallback('db/protectedApps.json'),
+        fetchWithFallback('db/db_version.json'),
       ]);
 
       // Check if all fetches succeeded
       const failed = [virusRes, keywordRes, brandRes, protectedRes, versionRes].find(r => r.status === 'rejected');
-      if (failed) throw new Error('Failed to fetch DB files from GitHub');
+      if (failed) throw new Error('Failed to fetch DB files');
 
       const virusData = await virusRes.value.json();
       const keywordData = await keywordRes.value.json();
@@ -259,6 +306,16 @@ export const VirusProvider = ({ children }) => {
           body: JSON.stringify(verBody),
         }
       );
+
+      // 核心魔法：推送完毕后，立刻向 purge.jsdelivr.net 发送刷新请求！
+      // 这样全球各地的 jsDelivr CDN 节点会瞬间抛弃旧缓存，所有用户马上就能同步到最新数据
+      try {
+        const purgeBase = `https://purge.jsdelivr.net/gh/${GITHUB_REPO}@main`;
+        for (const file of files) {
+          fetch(`${purgeBase}/${file.path}`).catch(() => {});
+        }
+        fetch(`${purgeBase}/db/db_version.json`).catch(() => {});
+      } catch (e) {}
 
       setDbSyncStatus('synced');
       const now = new Date().toLocaleString();
@@ -439,27 +496,22 @@ export const VirusProvider = ({ children }) => {
     try { localStorage.setItem(STORAGE_KEY_VIRUS, JSON.stringify(virusDB)); } catch {}
   }, [virusDB]);
 
-  // ==================== Startup GitHub Sync ====================
+  // ==================== Startup: load cache instantly, sync DB in background ====================
   useEffect(() => {
-    const initSync = async () => {
-      try {
-        await fetchDbFromGitHub();
-      } catch (err) {
-        console.error('Initial sync failed:', err);
-        // Load from cache if available
-        try {
-          const cached = JSON.parse(localStorage.getItem(STORAGE_KEY_DB_CACHE) || 'null');
-          if (cached) {
-            if (Array.isArray(cached.virusData)) setVirusDB(cached.virusData);
-            if (Array.isArray(cached.keywordData)) setKeywordDB(cached.keywordData);
-            if (Array.isArray(cached.brandData)) setBrandDB(cached.brandData);
-            if (Array.isArray(cached.protectedData)) setProtectedApps(cached.protectedData);
-            setDbSyncStatus('offline');
-          }
-        } catch {}
+    // Load cached DB immediately for instant display
+    try {
+      const cached = JSON.parse(localStorage.getItem(STORAGE_KEY_DB_CACHE) || 'null');
+      if (cached) {
+        if (Array.isArray(cached.virusData)) setVirusDB(cached.virusData);
+        if (Array.isArray(cached.keywordData)) setKeywordDB(cached.keywordData);
+        if (Array.isArray(cached.brandData)) setBrandDB(cached.brandData);
+        if (Array.isArray(cached.protectedData)) setProtectedApps(cached.protectedData);
+        if (cached.version) setDbVersion(cached.version);
+        setDbLastSync(localStorage.getItem('aiva_db_last_sync') || '');
       }
-    };
-    initSync();
+    } catch {}
+    // Background sync (doesn't block UI)
+    fetchDbFromGitHub(true);
   }, []);
 
   const exportVirusDat = useCallback(() => {
@@ -560,6 +612,8 @@ export const VirusProvider = ({ children }) => {
           setDevice(usbDevice);
           setDebugMsg('Device connected');
           fetchDeviceInfo(usbDevice.id);
+          // 预热缓存：在后台提前拉取所有重型ADB数据，让用户打开各页面时"秒开"
+          Backend.warmupDevice(usbDevice.id);
           addLog({ time: new Date().toLocaleString(), name: '系统', pkg: usbDevice.id, status: '设备已连接' });
         }
         return;

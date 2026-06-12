@@ -487,10 +487,8 @@ fn start_track_devices(app: tauri::AppHandle) {
 
 #[tauri::command]
 async fn verify_license(key: Option<String>, username: Option<String>, password: Option<String>, state: tauri::State<'_, AppState>, app_handle: tauri::AppHandle) -> Result<bool, String> {
-    let url = "https://raw.githubusercontent.com/bavenbaven/ERS-Tech-AV-KILLER/main/auth.json";
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(10)).build().unwrap();
-    let resp = client.get(url).send().await.map_err(|_| "网络连接失败，请检查您的网络设置或联系客服。".to_string())?;
-    let data: AuthData = resp.json().await.map_err(|_| "授权数据获取失败（文件不存在或格式错误），请联系客服。".to_string())?;
+    let body = fetch_with_fallback("auth.json", 10).await?;
+    let data: AuthData = serde_json::from_str(&body).map_err(|_| "授权数据格式错误，请联系客服。".to_string())?;
 
     let app_version = app_handle.package_info().version.to_string();
     if let Some(versions) = &data.allowed_versions {
@@ -550,11 +548,9 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
     }
     let saved_hash = std::fs::read_to_string(&key_path).unwrap_or_default();
     
-    let url = "https://raw.githubusercontent.com/bavenbaven/ERS-Tech-AV-KILLER/main/auth.json";
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(5)).build().unwrap();
-    match client.get(url).send().await {
-        Ok(resp) => {
-            if let Ok(data) = resp.json::<AuthData>().await {
+    match fetch_with_fallback("auth.json", 5).await {
+        Ok(body) => {
+            if let Ok(data) = serde_json::from_str::<AuthData>(&body) {
                 let mut valid = false;
                 if saved_hash.contains(":") {
                     let parts: Vec<&str> = saved_hash.splitn(2, ':').collect();
@@ -600,26 +596,36 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
 // ===== GitHub Sync Commands =====
 
 const GITHUB_REPO: &str = "bavenbaven/ERS-Tech-AV-KILLER";
+const GITHUB_RAW: &str = "https://raw.githubusercontent.com/bavenbaven/ERS-Tech-AV-KILLER/main";
+const GITHUB_CDN: &str = "https://cdn.jsdelivr.net/gh/bavenbaven/ERS-Tech-AV-KILLER@main";
+
+async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, String> {
+    let sources = [
+        format!("{GITHUB_CDN}/{path}"),
+        format!("{GITHUB_RAW}/{path}"),
+    ];
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_secs))
+        .build()
+        .map_err(|e| format!("创建请求失败: {}", e))?;
+
+    for url in &sources {
+        match client.get(url).send().await {
+            Ok(resp) if resp.status().is_success() => {
+                if let Ok(text) = resp.text().await {
+                    return Ok(text);
+                }
+            }
+            _ => continue,
+        }
+    }
+    Err("无法连接服务器 (jsDelivr/GitHub 均不可达)".to_string())
+}
 
 #[tauri::command]
 async fn github_fetch_db(db_name: String) -> Result<String, String> {
-    let url = format!(
-        "https://raw.githubusercontent.com/{}/main/db/{}.json",
-        GITHUB_REPO, db_name
-    );
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| format!("创建请求失败: {}", e))?;
-    
-    let resp = client.get(&url).send().await
-        .map_err(|e| format!("网络请求失败: {}", e))?;
-    
-    if resp.status().is_success() {
-        resp.text().await.map_err(|e| format!("读取响应失败: {}", e))
-    } else {
-        Err(format!("HTTP {}", resp.status()))
-    }
+    let path = format!("db/{}.json", db_name);
+    fetch_with_fallback(&path, 10).await
 }
 
 #[derive(Deserialize)]

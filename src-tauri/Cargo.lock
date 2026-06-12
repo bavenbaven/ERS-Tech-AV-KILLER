@@ -941,7 +941,7 @@ dependencies = [
 
 [[package]]
 name = "ers-tech-av-killer"
-version = "1.30.0"
+version = "1.50.0"
 dependencies = [
  "base64 0.22.1",
  "hex",
@@ -956,6 +956,7 @@ dependencies = [
  "tauri-plugin-http",
  "tauri-plugin-shell",
  "tauri-plugin-updater",
+ "tokio",
  "zip 0.6.6",
 ]
 
