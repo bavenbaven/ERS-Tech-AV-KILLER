@@ -1,11 +1,11 @@
-{
-  "version": "1.30.0",
-  "pub_date": "2026-06-10T12:00:00Z",
-  "notes": "ERS Tech AV KILLER v1.30 - 更新了病毒数据库",
+﻿{
+  "version": "1.50.0",
+  "pub_date": "2026-06-12T12:00:00Z",
+  "notes": "ERS Tech AV KILLER v1.50.0 - 修复全球同步与拦截系统问题",
   "platforms": {
     "windows-x86_64": {
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTR0o1MGhUK1NpZHpoYUFuTVMrRkthem1ZUHdDVDBMQU4zdHZnVE12eWdtYzc5TGJjU3BmZjRmdHVqTzkvZE9LbVpqZUlVbHNFT2Iyb0NBdVBhaGdNclNDL1FBZ1IrUlFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxMTU3NzIxCWZpbGU6RVJTIFRlY2ggQVYgS2lsbGVyXzEuMzAuMF94NjQtc2V0dXAuZXhlCm1qdURyVk9heW5scFVZc2RKeDd6RmJOeUp0S3R1OXRtNVF1VVpkbDlvdXNnWTZiL0RmVk4xRVJhdllYNDAyeG1aald5RTlNR3NKRVJ6MDY5SklFWkFnPT0K",
-      "url": "https://github.com/bavenbaven/ERS-Tech-AV-KILLER/releases/download/v1.30.0/ERS%20Tech%20AV%20Killer_1.30.0_x64-setup.exe"
+      "url": "https://github.com/bavenbaven/ERS-Tech-AV-KILLER/releases/download/v1.50.0/ERS%20Tech%20AV%20Killer_1.50.0_x64-setup.exe"
     }
   }
 }
