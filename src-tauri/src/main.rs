@@ -611,7 +611,9 @@ async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, St
         GITHUB_REPO, path
     );
     
-    if let Ok(resp) = client.get(&proxy_url).send().await {
+    if let Ok(resp) = client.get(&proxy_url)
+        .header("User-Agent", "ERS-Tech-AV-Killer")
+        .send().await {
         if resp.status().is_success() {
             if let Ok(file_content) = resp.json::<GitHubFileContent>().await {
                 let clean_str: String = file_content.content.chars().filter(|c| !c.is_whitespace()).collect();
@@ -631,7 +633,9 @@ async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, St
     ];
 
     for url in &sources {
-        match client.get(url).send().await {
+        match client.get(url)
+            .header("User-Agent", "ERS-Tech-AV-Killer")
+            .send().await {
             Ok(resp) if resp.status().is_success() => {
                 if let Ok(text) = resp.text().await {
                     return Ok(text);
