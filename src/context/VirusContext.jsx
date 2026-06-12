@@ -94,10 +94,10 @@ export const VirusProvider = ({ children }) => {
   const [dbLastSync, setDbLastSync] = useState(() => localStorage.getItem('aiva_db_last_sync') || '');
   const [dbError, setDbError] = useState('');
   const [githubToken, setGithubToken] = useState(() => localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN) || '');
-  const [githubApiProxy, setGithubApiProxy] = useState(() => localStorage.getItem(STORAGE_KEY_GITHUB_API_PROXY) || '');
+  const [githubApiProxy, setGithubApiProxy] = useState(() => localStorage.getItem(STORAGE_KEY_GITHUB_API_PROXY) || 'https://ers-github-proxy.bavenbaven.workers.dev');
 
   const getGitHubApiUrl = useCallback((path) => {
-    const base = githubApiProxy.trim() ? githubApiProxy.trim() : 'https://api.github.com';
+    const base = githubApiProxy.trim() ? githubApiProxy.trim() : 'https://ers-github-proxy.bavenbaven.workers.dev';
     const cleanBase = base.replace(/\/+$/, '');
     const cleanPath = path.replace(/^\/+/, '');
     return cleanBase + '/' + cleanPath;
@@ -123,7 +123,7 @@ export const VirusProvider = ({ children }) => {
       return { success: false, message: '新密码至少4位' };
     }
     localStorage.setItem(STORAGE_KEY_ADMIN_HASH, hashPassword(newPass));
-    return { success: true, message: '瀵嗙爜淇敼鎴愬姛' };
+    return { success: true, message: '密码修改成功' };
   }, []);
 
   const resetAdminPassword = useCallback(() => {
@@ -132,8 +132,33 @@ export const VirusProvider = ({ children }) => {
 }, []);
 
   const fetchWithFallback = useCallback(async (path) => {
-    // 提供4个不同的节点竞速，彻底解决国内各地区运营商屏蔽（同步失败）的问题
-    const urls = [
+    // 1. 优先尝试 Cloudflare Workers 代理 (通过 GitHub Contents API 直连拉取)
+    const proxyUrl = getGitHubApiUrl(`repos/${GITHUB_REPO}/contents/${path}`);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.content && json.encoding === 'base64') {
+          const cleanStr = json.content.replace(/\s/g, '');
+          const decodedStr = decodeURIComponent(escape(atob(cleanStr)));
+          const data = JSON.parse(decodedStr);
+          return {
+            ok: true,
+            json: async () => data
+          };
+        }
+      }
+    } catch (e) {
+      console.warn(`Cloudflare proxy fetch failed for ${path}, falling back to CDN...`, e);
+    }
+
+    // 2. 如果代理失败，退回到 4 个不同的 CDN 节点和 GitHub Raw 直连进行竞速
+    const fallbackUrls = [
       `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
       `https://fastly.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
       `https://gcore.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
@@ -145,36 +170,43 @@ export const VirusProvider = ({ children }) => {
       let isResolved = false;
 
       const doFetch = (url) => {
-        // 兼容老版本 Windows WebView2 的自定义超时机制
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
         
         fetch(url, { signal: controller.signal })
-          .then(r => {
+          .then(async (r) => {
             clearTimeout(timeoutId);
             if (r.ok && !isResolved) {
               isResolved = true;
-              resolve(r);
+              try {
+                const data = await r.json();
+                resolve({
+                  ok: true,
+                  json: async () => data
+                });
+              } catch (err) {
+                reject(err);
+              }
             } else if (!isResolved) {
               failedCount++;
-              if (failedCount === urls.length) reject(new Error(`Failed to fetch ${path}`));
+              if (failedCount === fallbackUrls.length) reject(new Error(`Failed to fetch ${path} from all sources`));
             }
           })
           .catch(() => {
             clearTimeout(timeoutId);
             if (!isResolved) {
               failedCount++;
-              if (failedCount === urls.length) reject(new Error(`Failed to fetch ${path}`));
+              if (failedCount === fallbackUrls.length) reject(new Error(`Failed to fetch ${path} from all sources`));
             }
           });
       };
 
       // 并发竞速：每隔 100ms 发起一个不同节点的请求，谁先返回就用谁的
-      urls.forEach((url, i) => {
+      fallbackUrls.forEach((url, i) => {
         setTimeout(() => { if (!isResolved) doFetch(url); }, i * 100);
       });
     });
-  }, []);
+  }, [getGitHubApiUrl]);
 
 // ==================== GitHub DB Sync Functions ====================
 
