@@ -600,14 +600,35 @@ const GITHUB_RAW: &str = "https://raw.githubusercontent.com/bavenbaven/ERS-Tech-
 const GITHUB_CDN: &str = "https://cdn.jsdelivr.net/gh/bavenbaven/ERS-Tech-AV-KILLER@main";
 
 async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, String> {
-    let sources = [
-        format!("{GITHUB_CDN}/{path}"),
-        format!("{GITHUB_RAW}/{path}"),
-    ];
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(timeout_secs))
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
+
+    // 1. 优先尝试 Cloudflare Workers 代理 (通过 GitHub Contents API 直连)
+    let proxy_url = format!(
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/contents/{}",
+        GITHUB_REPO, path
+    );
+    
+    if let Ok(resp) = client.get(&proxy_url).send().await {
+        if resp.status().is_success() {
+            if let Ok(file_content) = resp.json::<GitHubFileContent>().await {
+                let clean_str: String = file_content.content.chars().filter(|c| !c.is_whitespace()).collect();
+                if let Ok(decoded_bytes) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &clean_str) {
+                    if let Ok(text) = String::from_utf8(decoded_bytes) {
+                        return Ok(text);
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. 如果代理失败，退回到 CDN 和 Raw 直连
+    let sources = [
+        format!("{GITHUB_CDN}/{path}"),
+        format!("{GITHUB_RAW}/{path}"),
+    ];
 
     for url in &sources {
         match client.get(url).send().await {
@@ -643,7 +664,7 @@ async fn github_push_db(token: String, db_name: String, content: String) -> Resu
     
     // 1. 获取当前文件 SHA
     let get_url = format!(
-        "https://api.github.com/repos/{}/contents/db/{}.json",
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/contents/db/{}.json",
         GITHUB_REPO, db_name
     );
     let meta: GitHubFileContent = client.get(&get_url)
@@ -656,7 +677,7 @@ async fn github_push_db(token: String, db_name: String, content: String) -> Resu
     
     // 2. 推送更新
     let put_url = format!(
-        "https://api.github.com/repos/{}/contents/db/{}.json",
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/contents/db/{}.json",
         GITHUB_REPO, db_name
     );
     let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, content.as_bytes());
@@ -697,7 +718,7 @@ async fn github_create_issue(token: String, title: String, body: String) -> Resu
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
     
-    let url = format!("https://api.github.com/repos/{}/issues", GITHUB_REPO);
+    let url = format!("https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues", GITHUB_REPO);
     let body_json = json!({
         "title": title,
         "body": body,
@@ -739,7 +760,7 @@ async fn github_list_issues(token: String) -> Result<Vec<GitHubIssue>, String> {
         .map_err(|e| format!("创建请求失败: {}", e))?;
     
     let url = format!(
-        "https://api.github.com/repos/{}/issues?state=open&labels=pending",
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues?state=open&labels=pending",
         GITHUB_REPO
     );
     
@@ -766,7 +787,7 @@ async fn github_close_issue(token: String, issue_number: u64, comment: String) -
     
     // 1. 添加评论
     let comment_url = format!(
-        "https://api.github.com/repos/{}/issues/{}/comments",
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues/{}/comments",
         GITHUB_REPO, issue_number
     );
     let _ = client.post(&comment_url)
@@ -777,7 +798,7 @@ async fn github_close_issue(token: String, issue_number: u64, comment: String) -
     
     // 2. 关闭 Issue
     let close_url = format!(
-        "https://api.github.com/repos/{}/issues/{}",
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues/{}",
         GITHUB_REPO, issue_number
     );
     let resp = client.patch(&close_url)
