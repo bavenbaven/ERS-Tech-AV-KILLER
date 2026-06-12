@@ -222,7 +222,7 @@ const DetailPanel = memo(({ title, subtitle, data, color, icon, onAdd, onRemove,
 const Dashboard = () => {
   const { virusDB, addVirus, removeVirus, bulkAddVirus, protectedApps, addProtectedApp, removeProtectedApp, brandDB, addBrand, removeBrand, keywordDB, addKeyword, removeKeyword, device, deviceInfo, refreshDevices, isAdmin, exportVirusDat, importVirusDat,
     // GitHub sync
-    dbSyncStatus, dbVersion, dbLastSync, dbError, githubToken, githubRole,
+    dbSyncStatus, dbVersion, dbLastSync, dbError, githubToken, githubApiProxy, githubRole,
     pendingIssues, issuesLoading,
     fetchDbFromGitHub, pushDbToGitHub, reportVirus, fetchPendingIssues,
     approveIssue, rejectIssue, saveGithubConfig,
@@ -234,6 +234,7 @@ const Dashboard = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsToken, setSettingsToken] = useState(githubToken || '');
   const [settingsRole, setSettingsRole] = useState(githubRole || 'guest');
+  const [settingsApiProxy, setSettingsApiProxy] = useState(githubApiProxy || '');
   const [pushing, setPushing] = useState(false);
   const datFileRef = useRef(null);
   const isWireless = device?.id?.includes('_tcp') || device?.id?.includes(':');
@@ -330,7 +331,7 @@ const Dashboard = () => {
   };
 
   const handleSaveSettings = () => {
-    saveGithubConfig(settingsToken, settingsRole);
+    saveGithubConfig(settingsToken, settingsRole, settingsApiProxy);
     setShowSettingsModal(false);
     alert('设置已保存');
   };
@@ -456,7 +457,7 @@ const Dashboard = () => {
                 📋 审核上报 {pendingIssues.length > 0 && `(${pendingIssues.length})`}
               </button>
             )}
-            <button onClick={() => { setSettingsToken(githubToken); setSettingsRole(githubRole); setShowSettingsModal(true); }}
+            <button onClick={() => { setSettingsToken(githubToken); setSettingsRole(githubRole); setSettingsApiProxy(githubApiProxy); setShowSettingsModal(true); }}
               style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
               ⚙️ 设置
             </button>
@@ -473,6 +474,12 @@ const Dashboard = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: '480px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', padding: '35px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
             <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '20px' }}>⚙️ GitHub 设置</h2>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>GitHub API Proxy (可选)</label>
+              <input type="text" placeholder="https://your-worker.workers.dev" value={settingsApiProxy} onChange={e => setSettingsApiProxy(e.target.value)}
+                style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '14px', outline: 'none', fontFamily: 'monospace' }} />
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>留空则直连。国内用户推荐填入 Cloudflare Worker 代理域名以确保丝滑体验。</p>
+            </div>
             <div style={{ marginBottom: '15px' }}>
               <label style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>GitHub Token</label>
               <input type="password" placeholder="ghp_xxx..." value={settingsToken} onChange={e => setSettingsToken(e.target.value)}

@@ -20,6 +20,7 @@ const getSharedToken = () => atob(SHARED_TOKEN_B64);
 
 // GitHub DB sync state keys
 const STORAGE_KEY_GITHUB_TOKEN = 'aiva_github_token';
+const STORAGE_KEY_GITHUB_API_PROXY = 'aiva_github_api_proxy';
 const STORAGE_KEY_DB_VERSION = 'aiva_db_version';
 const STORAGE_KEY_DB_CACHE = 'aiva_db_cache'; // { virusDB, keywordDB, brandDB, protectedApps }
 
@@ -93,6 +94,14 @@ export const VirusProvider = ({ children }) => {
   const [dbLastSync, setDbLastSync] = useState(() => localStorage.getItem('aiva_db_last_sync') || '');
   const [dbError, setDbError] = useState('');
   const [githubToken, setGithubToken] = useState(() => localStorage.getItem(STORAGE_KEY_GITHUB_TOKEN) || '');
+  const [githubApiProxy, setGithubApiProxy] = useState(() => localStorage.getItem(STORAGE_KEY_GITHUB_API_PROXY) || '');
+
+  const getGitHubApiUrl = useCallback((path) => {
+    const base = githubApiProxy.trim() ? githubApiProxy.trim() : 'https://api.github.com';
+    const cleanBase = base.replace(/\/+$/, '');
+    const cleanPath = path.replace(/^\/+/, '');
+    return cleanBase + '/' + cleanPath;
+  }, [githubApiProxy]);
   const [githubRole, setGithubRole] = useState(() => localStorage.getItem('aiva_github_role') || 'guest'); // owner, contributor, guest
   const [pendingIssues, setPendingIssues] = useState([]);
   const [issuesLoading, setIssuesLoading] = useState(false);
@@ -248,7 +257,7 @@ export const VirusProvider = ({ children }) => {
       for (const file of files) {
         // Get current file SHA (needed for update)
         const getRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contents/${file.path}`,
+          getGitHubApiUrl(`repos/${GITHUB_REPO}/contents/${file.path}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
         let sha = '';
@@ -263,7 +272,7 @@ export const VirusProvider = ({ children }) => {
         if (sha) body.sha = sha;
 
         const putRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contents/${file.path}`,
+          getGitHubApiUrl(`repos/${GITHUB_REPO}/contents/${file.path}`),
           {
             method: 'PUT',
             headers: {
@@ -283,7 +292,7 @@ export const VirusProvider = ({ children }) => {
       // Update db_version.json with new timestamp
       const versionData = { version: dbVersion || '1.0.0', updated_at: new Date().toISOString() };
       const getVerRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contents/db/db_version.json`,
+        getGitHubApiUrl(`repos/${GITHUB_REPO}/contents/db/db_version.json`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       let verSha = '';
@@ -296,7 +305,7 @@ export const VirusProvider = ({ children }) => {
       if (verSha) verBody.sha = verSha;
 
       await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contents/db/db_version.json`,
+        getGitHubApiUrl(`repos/${GITHUB_REPO}/contents/db/db_version.json`),
         {
           method: 'PUT',
           headers: {
@@ -341,7 +350,7 @@ export const VirusProvider = ({ children }) => {
       };
 
       const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/issues`,
+        getGitHubApiUrl(`repos/${GITHUB_REPO}/issues`),
         {
           method: 'POST',
           headers: {
@@ -369,7 +378,7 @@ export const VirusProvider = ({ children }) => {
     setIssuesLoading(true);
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/issues?state=open&labels=pending`,
+        getGitHubApiUrl(`repos/${GITHUB_REPO}/issues?state=open&labels=pending`),
         { headers: { Authorization: `Bearer ${githubToken}` } }
       );
       if (!res.ok) throw new Error('Failed to fetch issues');
@@ -392,7 +401,7 @@ export const VirusProvider = ({ children }) => {
 
       // Close issue with comment
       const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/issues/${issueNumber}`,
+        getGitHubApiUrl(`repos/${GITHUB_REPO}/issues/${issueNumber}`),
         {
           method: 'PATCH',
           headers: {
@@ -420,7 +429,7 @@ export const VirusProvider = ({ children }) => {
     if (!githubToken || githubRole === 'guest') return { success: false, error: 'No permission' };
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/issues/${issueNumber}`,
+        getGitHubApiUrl(`repos/${GITHUB_REPO}/issues/${issueNumber}`),
         {
           method: 'PATCH',
           headers: {
@@ -444,10 +453,14 @@ export const VirusProvider = ({ children }) => {
     }
   }, [githubToken, githubRole]);
 
-  const saveGithubConfig = useCallback((token, role) => {
-    localStorage.setItem(STORAGE_KEY_GITHUB_TOKEN, token);
+  const saveGithubConfig = useCallback((token, role, proxy = '') => {
+    const cleanToken = token ? token.trim() : '';
+    const cleanProxy = proxy ? proxy.trim() : '';
+    localStorage.setItem(STORAGE_KEY_GITHUB_TOKEN, cleanToken);
+    localStorage.setItem(STORAGE_KEY_GITHUB_API_PROXY, cleanProxy);
     localStorage.setItem('aiva_github_role', role);
-    setGithubToken(token);
+    setGithubToken(cleanToken);
+    setGithubApiProxy(cleanProxy);
     setGithubRole(role);
   }, []);
 
@@ -943,12 +956,12 @@ export const VirusProvider = ({ children }) => {
     addVirus, removeVirus, bulkAddVirus,
     setAdminMode, setGuestMode, verifyPassword, hasAdminPassword, changeAdminPassword, resetAdminPassword,
     // GitHub sync
-    dbSyncStatus, dbVersion, dbLastSync, dbError, githubToken, githubRole,
+    dbSyncStatus, dbVersion, dbLastSync, dbError, githubToken, githubApiProxy, githubRole,
     pendingIssues, issuesLoading,
     fetchDbFromGitHub, pushDbToGitHub, reportVirus, fetchPendingIssues,
     approveIssue, rejectIssue, saveGithubConfig,
   }), [virusDB, protectedApps, brandDB, keywordDB, logs, device, deviceInfo, debugMsg, waitingAuth, isManualPaused, isAdmin, forceAuthPrompt,
-    dbSyncStatus, dbVersion, dbLastSync, dbError, githubToken, githubRole, pendingIssues, issuesLoading]);
+    dbSyncStatus, dbVersion, dbLastSync, dbError, githubToken, githubApiProxy, githubRole, pendingIssues, issuesLoading, getGitHubApiUrl]);
 
   return <VirusContext.Provider value={value}>{children}</VirusContext.Provider>;
 };
