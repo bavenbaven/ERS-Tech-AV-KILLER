@@ -10,8 +10,9 @@ import RemoteControl from './pages/RemoteControl';
 import Help from './pages/Help';
 import { useVirus } from './context/VirusContext';
 import { openExternal } from './utils/shell';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 import './index.css';
-
 const SHOP_URL = 'https://shopee.com.my/shop/146154950';
 const TIKTOK_URL = 'https://www.tiktok.com/@bavenyang?_r=1&_t=ZS-96Mu2A5wTzM';
 const SPLASH_SECONDS = 3;
@@ -164,6 +165,12 @@ function App() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [forceUpdate, setForceUpdate] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => {});
     invoke('check_auth_status').then((status) => {
@@ -174,6 +181,74 @@ function App() {
       setCheckingAuth(false);
     });
   }, []);
+
+  const checkForUpdates = async (manual = false) => {
+    if (checkingUpdate) return;
+    setCheckingUpdate(true);
+    try {
+      const update = await check();
+      if (update) {
+        const minVersionMatch = update.body?.match(/\[MIN_VERSION:(.*?)\]/);
+        let isForce = false;
+        if (minVersionMatch && minVersionMatch[1] && appVersion) {
+          const minVer = minVersionMatch[1];
+          const currentParts = appVersion.split('.').map(Number);
+          const minParts = minVer.split('.').map(Number);
+          for (let i = 0; i < 3; i++) {
+            if ((currentParts[i] || 0) < (minParts[i] || 0)) {
+              isForce = true;
+              break;
+            } else if ((currentParts[i] || 0) > (minParts[i] || 0)) {
+              break;
+            }
+          }
+        }
+        setForceUpdate(isForce);
+        setUpdateInfo(update);
+      } else if (manual) {
+        alert("当前已是最新版本！");
+      }
+    } catch (error) {
+      console.error("Failed to check for updates:", error);
+      if (manual) alert("检查更新失败: " + error);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  useEffect(() => {
+    if (appVersion && !checkingUpdate && !updateInfo) {
+      checkForUpdates(false);
+    }
+  }, [appVersion]);
+
+  const handleInstallUpdate = async () => {
+    if (!updateInfo) return;
+    setIsUpdating(true);
+    try {
+      let downloaded = 0;
+      let contentLength = 0;
+      await updateInfo.downloadAndInstall((event) => {
+        switch (event.event) {
+          case 'Started':
+            contentLength = event.data.contentLength;
+            break;
+          case 'Progress':
+            downloaded += event.data.chunkLength;
+            if (contentLength) {
+              setUpdateProgress(Math.round((downloaded / contentLength) * 100));
+            }
+            break;
+          case 'Finished':
+            break;
+        }
+      });
+      await relaunch();
+    } catch (e) {
+      alert("更新失败: " + e);
+      setIsUpdating(false);
+    }
+  };
 
   const handleLogin = async () => {
     setIsLoggingIn(true);
@@ -280,6 +355,14 @@ function App() {
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '1px' }}>Android 恶意软件检测与清除工具</p>
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'nowrap' }}>
+              <button 
+                onClick={() => checkForUpdates(true)} 
+                className="btn btn-outline" 
+                style={{ fontSize: '11px', padding: '4px 10px', borderColor: 'var(--neon-cyan)', color: 'var(--neon-cyan)' }}
+                disabled={checkingUpdate}
+              >
+                {checkingUpdate ? '🔄 检查中...' : '🔄 检查更新'}
+              </button>
               {isAdmin ? (
                 <>
                   <div className="status-badge status-badge-admin" style={{ fontSize: '11px', padding: '4px 10px' }}>🔑 管理员</div>
@@ -402,6 +485,52 @@ function App() {
                 } else { setPassError(result.message); }
               }}>确认</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Dialog */}
+      {updateInfo && (
+        <div className="dialog-overlay">
+          <div className="glass-card dialog-card" style={{ width: '450px', border: forceUpdate ? '1px solid var(--accent-danger)' : '1px solid var(--neon-cyan)' }}>
+            <div style={{ fontSize: '40px', marginBottom: '15px' }}>🚀</div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '10px', color: 'white' }}>发现新版本 {updateInfo.version}</h3>
+            
+            {forceUpdate && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '8px', borderRadius: '6px', color: '#ef4444', fontSize: '13px', marginBottom: '15px', fontWeight: 'bold' }}>
+                ⚠️ 当前版本过旧，必须更新后才能继续使用。
+              </div>
+            )}
+
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px', textAlign: 'left', marginBottom: '20px', maxHeight: '150px', overflowY: 'auto' }}>
+              <p style={{ color: 'var(--neon-cyan)', fontSize: '12px', fontWeight: 'bold', marginBottom: '5px' }}>更新内容：</p>
+              <div style={{ fontSize: '13px', color: 'var(--text-main)', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
+                {updateInfo.body?.replace(/\[MIN_VERSION:.*?\]/g, '').trim()}
+              </div>
+            </div>
+
+            {isUpdating ? (
+              <div style={{ width: '100%', marginBottom: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '5px', color: 'var(--text-muted)' }}>
+                  <span>正在下载更新...</span>
+                  <span>{updateProgress}%</span>
+                </div>
+                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${updateProgress}%`, height: '100%', background: 'var(--neon-cyan)', transition: 'width 0.2s' }} />
+                </div>
+              </div>
+            ) : (
+              <div className="dialog-actions" style={{ justifyContent: forceUpdate ? 'center' : 'flex-end' }}>
+                {!forceUpdate && (
+                  <button className="btn btn-outline" style={{ padding: '10px 24px' }} onClick={() => setUpdateInfo(null)}>
+                    稍后更新
+                  </button>
+                )}
+                <button className="btn btn-primary" style={{ padding: '10px 24px', width: forceUpdate ? '100%' : 'auto' }} onClick={handleInstallUpdate}>
+                  立即更新
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
