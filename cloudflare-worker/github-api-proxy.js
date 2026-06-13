@@ -22,6 +22,21 @@ function arrayBufferToBase64(buffer) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // 处理 CORS 预检请求 (OPTIONS) — 这是关键！
+    // 浏览器在发送带 Authorization 头的 POST/PUT/PATCH 请求之前，会先发一个 OPTIONS 请求
+    // 如果不处理这个，所有的写入操作（如上报病毒）都会被拦截
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+          'Access-Control-Max-Age': '86400',
+        }
+      });
+    }
     
     // 如果是 GET 请求获取仓库内容：
     // - 无 Authorization 头 = 只读同步（拉取病毒库），走 raw.githubusercontent.com 快速通道，绕过限流
