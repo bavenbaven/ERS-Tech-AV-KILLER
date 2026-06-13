@@ -23,9 +23,12 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     
-    // 如果是 GET 请求获取仓库内容，优先从 raw.githubusercontent.com 获取，以绕过 GitHub API 60次/小时 的限流
+    // 如果是 GET 请求获取仓库内容：
+    // - 无 Authorization 头 = 只读同步（拉取病毒库），走 raw.githubusercontent.com 快速通道，绕过限流
+    // - 有 Authorization 头 = 推送前获取 SHA（需要真实 sha），走真实 GitHub API
     const match = request.method === 'GET' && url.pathname.match(/^\/repos\/([^/]+)\/([^/]+)\/contents\/(.+)$/);
-    if (match) {
+    const hasAuth = request.headers.has('Authorization');
+    if (match && !hasAuth) {
       const owner = match[1];
       const repo = match[2];
       const path = match[3];
