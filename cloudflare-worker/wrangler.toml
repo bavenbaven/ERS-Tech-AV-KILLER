@@ -1,0 +1,4 @@
+name = "ers-github-proxy"
+main = "github-api-proxy.js"
+compatibility_date = "2026-06-12"
+workers_dev = true

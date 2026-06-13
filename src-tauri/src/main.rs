@@ -488,7 +488,15 @@ fn start_track_devices(app: tauri::AppHandle) {
 #[tauri::command]
 async fn verify_license(key: Option<String>, username: Option<String>, password: Option<String>, state: tauri::State<'_, AppState>, app_handle: tauri::AppHandle) -> Result<bool, String> {
     let body = fetch_with_fallback("auth.json", 10).await?;
-    let data: AuthData = serde_json::from_str(&body).map_err(|_| "授权数据格式错误，请联系客服。".to_string())?;
+    let clean_body = body.trim_start_matches('\u{feff}');
+    let data: AuthData = serde_json::from_str(clean_body).map_err(|e| {
+        let snippet = if clean_body.len() > 100 {
+            format!("{}...", &clean_body[..100])
+        } else {
+            clean_body.to_string()
+        };
+        format!("解析授权数据失败: {}. 接收内容: {}", e, snippet)
+    })?;
 
     let app_version = app_handle.package_info().version.to_string();
     if let Some(versions) = &data.allowed_versions {
@@ -550,7 +558,8 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
     
     match fetch_with_fallback("auth.json", 5).await {
         Ok(body) => {
-            if let Ok(data) = serde_json::from_str::<AuthData>(&body) {
+            let clean_body = body.trim_start_matches('\u{feff}');
+            if let Ok(data) = serde_json::from_str::<AuthData>(clean_body) {
                 let mut valid = false;
                 if saved_hash.contains(":") {
                     let parts: Vec<&str> = saved_hash.splitn(2, ':').collect();
@@ -619,15 +628,21 @@ async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, St
                 let clean_str: String = file_content.content.chars().filter(|c| !c.is_whitespace()).collect();
                 if let Ok(decoded_bytes) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &clean_str) {
                     if let Ok(text) = String::from_utf8(decoded_bytes) {
-                        return Ok(text);
+                        let clean_text = text.trim_start_matches('\u{feff}').to_string();
+                        // 验证是否是合法 JSON，确保没有拿到被劫持的 HTML 网页
+                        if serde_json::from_str::<serde_json::Value>(&clean_text).is_ok() {
+                            return Ok(clean_text);
+                        }
                     }
                 }
             }
         }
     }
 
-    // 2. 如果代理失败，退回到 CDN 和 Raw 直连
+    // 2. 备用高速度国内代理以及官方直连 CDN / Raw
     let sources = [
+        format!("https://gh-proxy.com/https://raw.githubusercontent.com/{GITHUB_REPO}/main/{path}"),
+        format!("https://ghfast.top/https://raw.githubusercontent.com/{GITHUB_REPO}/main/{path}"),
         format!("{GITHUB_CDN}/{path}"),
         format!("{GITHUB_RAW}/{path}"),
     ];
@@ -638,13 +653,17 @@ async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, St
             .send().await {
             Ok(resp) if resp.status().is_success() => {
                 if let Ok(text) = resp.text().await {
-                    return Ok(text);
+                    let clean_text = text.trim_start_matches('\u{feff}').to_string();
+                    // 验证是否是合法 JSON，防止网络劫持返回 HTML 页面
+                    if serde_json::from_str::<serde_json::Value>(&clean_text).is_ok() {
+                        return Ok(clean_text);
+                    }
                 }
             }
             _ => continue,
         }
     }
-    Err("无法连接服务器 (jsDelivr/GitHub 均不可达)".to_string())
+    Err("无法连接服务器或返回数据格式不正确 (所有镜像代理均不可达)".to_string())
 }
 
 #[tauri::command]

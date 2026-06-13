@@ -157,8 +157,10 @@ export const VirusProvider = ({ children }) => {
       console.warn(`Cloudflare proxy fetch failed for ${path}, falling back to CDN...`, e);
     }
 
-    // 2. 如果代理失败，退回到 4 个不同的 CDN 节点和 GitHub Raw 直连进行竞速
+    // 2. 如果代理失败，退回到国内镜像代理、CDN 节点和 GitHub Raw 直连进行竞速
     const fallbackUrls = [
+      `https://gh-proxy.com/https://raw.githubusercontent.com/${GITHUB_REPO}/main/${path}`,
+      `https://ghfast.top/https://raw.githubusercontent.com/${GITHUB_REPO}/main/${path}`,
       `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
       `https://fastly.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
       `https://gcore.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
@@ -177,15 +179,22 @@ export const VirusProvider = ({ children }) => {
           .then(async (r) => {
             clearTimeout(timeoutId);
             if (r.ok && !isResolved) {
-              isResolved = true;
               try {
                 const data = await r.json();
-                resolve({
-                  ok: true,
-                  json: async () => data
-                });
+                if (!isResolved) {
+                  isResolved = true;
+                  resolve({
+                    ok: true,
+                    json: async () => data
+                  });
+                }
               } catch (err) {
-                reject(err);
+                if (!isResolved) {
+                  failedCount++;
+                  if (failedCount === fallbackUrls.length) {
+                    reject(new Error(`Failed to fetch ${path} from all sources`));
+                  }
+                }
               }
             } else if (!isResolved) {
               failedCount++;
