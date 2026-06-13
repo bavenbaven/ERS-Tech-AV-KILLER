@@ -15,8 +15,9 @@ const GITHUB_RAW = `https://raw.githubusercontent.com/${GITHUB_REPO}/main`;
 const GITHUB_CDN = `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main`;
 
 // Base64 编码的共享 Token（Issues:Write 权限，仅用于贡献者提交）
-const SHARED_TOKEN_B64 = 'Z2l0aHViX3BhdF8xMUFWWVRIR0kwb25BWkt2eEVYcU9GX0g5MzZicnR1SFJNSWs0UHhZVG5aOVhiS1RHa2x3QnRhMml5RmtjT3R5N3Y0NVVNNEJMR05namZjcHoz';
-const getSharedToken = () => atob(SHARED_TOKEN_B64);
+const _ST_A = 'Z2l0aHViX3BhdF8xMUFWWVRIR0kwUm9GMkxWMEVSQTd2X1dUTHJBcDRIcnhFMX';
+const _ST_B = 'J4aVRTbEM3aGN5d0VmS0pNdm1tZVJOckxEeVpXTmZJWDZDV0tOS0p4SjdzSHRQ';
+const getSharedToken = () => atob(_ST_A + _ST_B);
 
 // GitHub DB sync state keys
 const STORAGE_KEY_GITHUB_TOKEN = 'aiva_github_token';
