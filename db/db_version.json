@@ -1,11 +1,4 @@
 {
   "version": 3,
-  "updated_at": "2026-06-12T13:00:00.000Z",
-  "updated_by": "bavenbaven",
-  "counts": {
-    "virusDB": 1379,
-    "keywordDB": 197,
-    "brandDB": 263,
-    "protectedApps": 302
-  }
+  "updated_at": "2026-06-13T03:35:00.724Z"
 }
