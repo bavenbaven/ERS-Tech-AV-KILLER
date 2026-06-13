@@ -1,16 +1,16 @@
 // Hide console window on Windows
 #![windows_subsystem = "windows"]
 
+use serde::Deserialize;
+use serde::Serialize;
+use serde_json::{json, Value};
+use std::fs;
 use std::io::Read;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::fs;
-use serde::Serialize;
-use serde_json::{json, Value};
-use tauri::Emitter;
 use std::sync::Mutex;
-use serde::Deserialize;
+use tauri::Emitter;
 use tauri::Manager;
 
 struct AppState {
@@ -26,7 +26,6 @@ struct AuthData {
     #[serde(default)]
     allowed_versions: Option<Vec<String>>,
 }
-
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -61,19 +60,20 @@ fn get_adb_path() -> String {
 }
 
 const VENDOR_IDS: &[&str] = &[
-    "0x18d1", "0x04e8", "0x2717", "0x12d1", "0x22d9", "0x2b4c", "0x2d95", "0x22b8", 
-    "0x054c", "0x1004", "0x0bb4", "0x0b05", "0x19d2", "0x17ef", "0x2a45", "0x1bbb"
+    "0x18d1", "0x04e8", "0x2717", "0x12d1", "0x22d9", "0x2b4c", "0x2d95", "0x22b8", "0x054c",
+    "0x1004", "0x0bb4", "0x0b05", "0x19d2", "0x17ef", "0x2a45", "0x1bbb",
 ];
 
 fn configure_adb_env() -> Result<(), String> {
-    let home = std::env::var("USERPROFILE").map_err(|_| "Could not find USERPROFILE".to_string())?;
+    let home =
+        std::env::var("USERPROFILE").map_err(|_| "Could not find USERPROFILE".to_string())?;
     let adb_dir = Path::new(&home).join(".android");
     if !adb_dir.exists() {
         let _ = fs::create_dir_all(&adb_dir);
     }
     let ini_path = adb_dir.join("adb_usb.ini");
     let mut current_content = fs::read_to_string(&ini_path).unwrap_or_default();
-    
+
     let mut modified = false;
     for vid in VENDOR_IDS {
         if !current_content.contains(vid) {
@@ -128,7 +128,8 @@ fn run_raw_cmd(program: &str, args: &[&str]) -> Result<String, String> {
     let mut c = Command::new(program);
     #[cfg(windows)]
     c.creation_flags(CREATE_NO_WINDOW);
-    c.args(args).output()
+    c.args(args)
+        .output()
         .map_err(|e| format!("{} error: {}", program, e))
         .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
 }
@@ -139,80 +140,118 @@ fn run_adb_vec(args: &[String]) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn adb_raw(args: Vec<String>, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_raw(args: Vec<String>, state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb_vec(&args)}
+    run_adb_vec(&args)
+}
 
 #[tauri::command]
-fn adb_shell(device_id: String, command: String, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_shell(
+    device_id: String,
+    command: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["-s", &device_id, "shell", &command])}
+    run_adb(&["-s", &device_id, "shell", &command])
+}
 
 #[tauri::command]
-fn adb_shell_screenshot(device_id: String, command: String, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_shell_screenshot(
+    device_id: String,
+    command: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
     let data = run_adb_binary(&device_id, &command)?;
-    Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &data))}
+    Ok(base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        &data,
+    ))
+}
 
 #[tauri::command]
-fn adb_push(device_id: String, local: String, remote: String, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_push(
+    device_id: String,
+    local: String,
+    remote: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["-s", &device_id, "push", &local, &remote])}
+    run_adb(&["-s", &device_id, "push", &local, &remote])
+}
 
 #[tauri::command]
-fn adb_pull(device_id: String, remote: String, local: String, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_pull(
+    device_id: String,
+    remote: String,
+    local: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["-s", &device_id, "pull", &remote, &local])}
+    run_adb(&["-s", &device_id, "pull", &remote, &local])
+}
 
 #[tauri::command]
-fn adb_devices(state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_devices(state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["devices"])}
+    run_adb(&["devices"])
+}
 
 #[tauri::command]
-fn adb_kill_server(state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_kill_server(state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["kill-server"])}
+    run_adb(&["kill-server"])
+}
 
 #[tauri::command]
-fn adb_start_server(state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_start_server(state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["start-server"])}
+    run_adb(&["start-server"])
+}
 
 #[tauri::command]
-fn adb_install(device_id: String, apk_path: String, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_install(
+    device_id: String,
+    apk_path: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
 
-    run_adb(&["-s", &device_id, "install", "-r", &apk_path])}
+    run_adb(&["-s", &device_id, "install", "-r", &apk_path])
+}
 
 #[tauri::command]
-fn adb_install_safe(device_id: String, apk_path: String, state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_install_safe(
+    device_id: String,
+    apk_path: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
@@ -227,10 +266,11 @@ fn adb_install_safe(device_id: String, apk_path: String, state: tauri::State<'_,
     std::fs::copy(src, &dest).map_err(|e| format!("Cannot copy APK to temp: {}", e))?;
     let result = run_adb(&["-s", &device_id, "install", "-r", &dest.to_string_lossy()]);
     let _ = std::fs::remove_file(&dest);
-    result}
+    result
+}
 
 #[tauri::command]
-fn adb_reconnect(state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_reconnect(state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
@@ -241,10 +281,11 @@ fn adb_reconnect(state: tauri::State<'_, AppState>) -> Result<String, String>{
     let _ = run_adb(&["start-server"]);
     let _ = run_adb(&["usb"]);
     let _ = run_adb(&["reconnect", "offline"]);
-    run_adb(&["devices"])}
+    run_adb(&["devices"])
+}
 
 #[tauri::command]
-fn adb_quick_connect(state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn adb_quick_connect(state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
@@ -253,10 +294,11 @@ fn adb_quick_connect(state: tauri::State<'_, AppState>) -> Result<String, String
     let _ = run_adb(&["start-server"]);
     let _ = run_adb(&["usb"]);
     let _ = run_adb(&["reconnect", "offline"]);
-    run_adb(&["devices"])}
+    run_adb(&["devices"])
+}
 
 #[tauri::command]
-fn install_driver(state: tauri::State<'_, AppState>) -> Result<String, String>{
+fn install_driver(state: tauri::State<'_, AppState>) -> Result<String, String> {
     if !*state.unlocked.lock().unwrap() {
         return Err("Error: Software is locked. Please login first.".to_string());
     }
@@ -286,11 +328,15 @@ fn install_driver(state: tauri::State<'_, AppState>) -> Result<String, String>{
             }
         }
     }
-    Err("Driver file not found".to_string())}
+    Err("Driver file not found".to_string())
+}
 
 #[tauri::command]
 fn extract_app_icon(apk_path: String, cache_dir: String, pkg: String) -> Result<String, String> {
-    let safe_name = pkg.replace(|c: char| !c.is_alphanumeric() && c != '.' && c != '_' && c != '-', "_");
+    let safe_name = pkg.replace(
+        |c: char| !c.is_alphanumeric() && c != '.' && c != '_' && c != '-',
+        "_",
+    );
     let cache_file = Path::new(&cache_dir).join(format!("{}.png", safe_name));
 
     if cache_file.exists() {
@@ -362,29 +408,39 @@ fn extract_app_icon(apk_path: String, cache_dir: String, pkg: String) -> Result<
 fn adb_diagnose() -> String {
     let adb = get_adb_path();
     let adb_exists = Path::new(&adb).exists();
-    
+
     // Check abs path via exe
     let abs_path = std::env::current_exe()
         .ok()
-        .and_then(|e| e.parent().map(|d| d.join("server").join("platform-tools").join("adb.exe")))
+        .and_then(|e| {
+            e.parent()
+                .map(|d| d.join("server").join("platform-tools").join("adb.exe"))
+        })
         .map(|p| format!("{} (exists:{})", p.display(), p.exists()))
         .unwrap_or_else(|| "N/A".to_string());
 
     // Try running adb devices
-    let devices_out = run_adb(&["devices"])
-        .unwrap_or_else(|e| format!("ERROR: {}", e));
-    
+    let devices_out = run_adb(&["devices"]).unwrap_or_else(|e| format!("ERROR: {}", e));
+
     // Check if port 5037 is in use
-    let port_check = run_raw_cmd("netstat", &["-ano"])
-        .unwrap_or_default();
-    let port_5037 = port_check.lines()
+    let port_check = run_raw_cmd("netstat", &["-ano"]).unwrap_or_default();
+    let port_5037 = port_check
+        .lines()
         .filter(|l| l.contains(":5037") && l.contains("LISTENING"))
-        .collect::<Vec<_>>().join(" | ");
+        .collect::<Vec<_>>()
+        .join(" | ");
 
     format!(
         "ADB路径: {}\nADB文件存在: {}\n绝对路径: {}\n设备列表输出:\n{}\n默认端口(5037)占用: {}",
-        adb, adb_exists, abs_path, devices_out.trim(),
-        if port_5037.is_empty() { "未占用".to_string() } else { port_5037 }
+        adb,
+        adb_exists,
+        abs_path,
+        devices_out.trim(),
+        if port_5037.is_empty() {
+            "未占用".to_string()
+        } else {
+            port_5037
+        }
     )
 }
 
@@ -484,9 +540,14 @@ fn start_track_devices(app: tauri::AppHandle) {
     });
 }
 
-
 #[tauri::command]
-async fn verify_license(key: Option<String>, username: Option<String>, password: Option<String>, state: tauri::State<'_, AppState>, app_handle: tauri::AppHandle) -> Result<bool, String> {
+async fn verify_license(
+    key: Option<String>,
+    username: Option<String>,
+    password: Option<String>,
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<bool, String> {
     let body = fetch_with_fallback("auth.json", 10).await?;
     let clean_body = body.trim_start_matches('\u{feff}');
     let data: AuthData = serde_json::from_str(clean_body).map_err(|e| {
@@ -501,13 +562,16 @@ async fn verify_license(key: Option<String>, username: Option<String>, password:
     let app_version = app_handle.package_info().version.to_string();
     if let Some(versions) = &data.allowed_versions {
         if !versions.is_empty() && !versions.contains(&app_version) {
-            return Err(format!("当前版本 (v{}) 已停止服务，请下载最新版本。", app_version));
+            return Err(format!(
+                "当前版本 (v{}) 已停止服务，请下载最新版本。",
+                app_version
+            ));
         }
     }
 
     let mut success = false;
-    use sha2::{Sha256, Digest};
     use hex::encode;
+    use sha2::{Digest, Sha256};
 
     let hash_input = match (&key, &username, &password) {
         (Some(k), _, _) => {
@@ -518,7 +582,7 @@ async fn verify_license(key: Option<String>, username: Option<String>, password:
                 success = true;
             }
             hash
-        },
+        }
         (_, Some(u), Some(p)) => {
             let mut hasher = Sha256::new();
             hasher.update(p.as_bytes());
@@ -529,13 +593,16 @@ async fn verify_license(key: Option<String>, username: Option<String>, password:
                 }
             }
             format!("{}:{}", u, hash)
-        },
+        }
         _ => return Err("Invalid input".to_string()),
     };
 
     if success {
         *state.unlocked.lock().unwrap() = true;
-        let app_dir = app_handle.path().app_data_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+        let app_dir = app_handle
+            .path()
+            .app_data_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("."));
         let _ = std::fs::create_dir_all(&app_dir);
         let _ = std::fs::write(app_dir.join("auth.key"), hash_input);
         Ok(true)
@@ -545,17 +612,23 @@ async fn verify_license(key: Option<String>, username: Option<String>, password:
 }
 
 #[tauri::command]
-async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri::AppHandle) -> Result<bool, String> {
+async fn check_auth_status(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<bool, String> {
     if *state.unlocked.lock().unwrap() {
         return Ok(true);
     }
-    let app_dir = app_handle.path().app_data_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let app_dir = app_handle
+        .path()
+        .app_data_dir()
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
     let key_path = app_dir.join("auth.key");
     if !key_path.exists() {
         return Ok(false);
     }
     let saved_hash = std::fs::read_to_string(&key_path).unwrap_or_default();
-    
+
     match fetch_with_fallback("auth.json", 5).await {
         Ok(body) => {
             let clean_body = body.trim_start_matches('\u{feff}');
@@ -575,7 +648,7 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
                         valid = true;
                     }
                 }
-                
+
                 if valid {
                     if let Some(versions) = &data.allowed_versions {
                         let app_version = app_handle.package_info().version.to_string();
@@ -584,7 +657,7 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
                         }
                     }
                 }
-                
+
                 if valid {
                     *state.unlocked.lock().unwrap() = true;
                     return Ok(true);
@@ -593,7 +666,7 @@ async fn check_auth_status(state: tauri::State<'_, AppState>, app_handle: tauri:
                     return Ok(false);
                 }
             }
-        },
+        }
         Err(_) => {
             *state.unlocked.lock().unwrap() = true;
             return Ok(true);
@@ -619,14 +692,23 @@ async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, St
         "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/contents/{}",
         GITHUB_REPO, path
     );
-    
-    if let Ok(resp) = client.get(&proxy_url)
+
+    if let Ok(resp) = client
+        .get(&proxy_url)
         .header("User-Agent", "ERS-Tech-AV-Killer")
-        .send().await {
+        .send()
+        .await
+    {
         if resp.status().is_success() {
             if let Ok(file_content) = resp.json::<GitHubFileContent>().await {
-                let clean_str: String = file_content.content.chars().filter(|c| !c.is_whitespace()).collect();
-                if let Ok(decoded_bytes) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &clean_str) {
+                let clean_str: String = file_content
+                    .content
+                    .chars()
+                    .filter(|c| !c.is_whitespace())
+                    .collect();
+                if let Ok(decoded_bytes) =
+                    base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &clean_str)
+                {
                     if let Ok(text) = String::from_utf8(decoded_bytes) {
                         let clean_text = text.trim_start_matches('\u{feff}').to_string();
                         // 验证是否是合法 JSON，确保没有拿到被劫持的 HTML 网页
@@ -648,9 +730,12 @@ async fn fetch_with_fallback(path: &str, timeout_secs: u64) -> Result<String, St
     ];
 
     for url in &sources {
-        match client.get(url)
+        match client
+            .get(url)
             .header("User-Agent", "ERS-Tech-AV-Killer")
-            .send().await {
+            .send()
+            .await
+        {
             Ok(resp) if resp.status().is_success() => {
                 if let Ok(text) = resp.text().await {
                     let clean_text = text.trim_start_matches('\u{feff}').to_string();
@@ -684,39 +769,47 @@ async fn github_push_db(token: String, db_name: String, content: String) -> Resu
         .timeout(std::time::Duration::from_secs(15))
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
-    
+
     // 1. 获取当前文件 SHA
     let get_url = format!(
         "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/contents/db/{}.json",
         GITHUB_REPO, db_name
     );
-    let meta: GitHubFileContent = client.get(&get_url)
+    let meta: GitHubFileContent = client
+        .get(&get_url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "ERS-Tech-AV-Killer")
-        .send().await
+        .send()
+        .await
         .map_err(|e| format!("获取文件信息失败: {}", e))?
-        .json().await
+        .json()
+        .await
         .map_err(|e| format!("解析文件信息失败: {}", e))?;
-    
+
     // 2. 推送更新
     let put_url = format!(
         "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/contents/db/{}.json",
         GITHUB_REPO, db_name
     );
-    let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, content.as_bytes());
+    let encoded = base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        content.as_bytes(),
+    );
     let body = json!({
         "message": format!("更新 {} {}", db_name, chrono_wrapper()),
         "content": encoded,
         "sha": meta.sha
     });
-    
-    let resp = client.put(&put_url)
+
+    let resp = client
+        .put(&put_url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "ERS-Tech-AV-Killer")
         .json(&body)
-        .send().await
+        .send()
+        .await
         .map_err(|e| format!("推送失败: {}", e))?;
-    
+
     if resp.status().is_success() {
         Ok("推送成功".to_string())
     } else {
@@ -740,21 +833,26 @@ async fn github_create_issue(token: String, title: String, body: String) -> Resu
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
-    
-    let url = format!("https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues", GITHUB_REPO);
+
+    let url = format!(
+        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues",
+        GITHUB_REPO
+    );
     let body_json = json!({
         "title": title,
         "body": body,
         "labels": ["pending"]
     });
-    
-    let resp = client.post(&url)
+
+    let resp = client
+        .post(&url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "ERS-Tech-AV-Killer")
         .json(&body_json)
-        .send().await
+        .send()
+        .await
         .map_err(|e| format!("网络请求失败: {}", e))?;
-    
+
     if resp.status().is_success() {
         let data: Value = resp.json().await.unwrap_or_default();
         let html_url = data["html_url"].as_str().unwrap_or("");
@@ -781,18 +879,20 @@ async fn github_list_issues(token: String) -> Result<Vec<GitHubIssue>, String> {
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
-    
+
     let url = format!(
         "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues?state=open&labels=pending",
         GITHUB_REPO
     );
-    
-    let resp = client.get(&url)
+
+    let resp = client
+        .get(&url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "ERS-Tech-AV-Killer")
-        .send().await
+        .send()
+        .await
         .map_err(|e| format!("网络请求失败: {}", e))?;
-    
+
     if resp.status().is_success() {
         let issues: Vec<GitHubIssue> = resp.json().await.unwrap_or_default();
         Ok(issues)
@@ -802,35 +902,43 @@ async fn github_list_issues(token: String) -> Result<Vec<GitHubIssue>, String> {
 }
 
 #[tauri::command]
-async fn github_close_issue(token: String, issue_number: u64, comment: String) -> Result<String, String> {
+async fn github_close_issue(
+    token: String,
+    issue_number: u64,
+    comment: String,
+) -> Result<String, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
-    
+
     // 1. 添加评论
     let comment_url = format!(
         "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues/{}/comments",
         GITHUB_REPO, issue_number
     );
-    let _ = client.post(&comment_url)
+    let _ = client
+        .post(&comment_url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "ERS-Tech-AV-Killer")
         .json(&json!({ "body": comment }))
-        .send().await;
-    
+        .send()
+        .await;
+
     // 2. 关闭 Issue
     let close_url = format!(
         "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues/{}",
         GITHUB_REPO, issue_number
     );
-    let resp = client.patch(&close_url)
+    let resp = client
+        .patch(&close_url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "ERS-Tech-AV-Killer")
         .json(&json!({ "state": "closed" }))
-        .send().await
+        .send()
+        .await
         .map_err(|e| format!("关闭失败: {}", e))?;
-    
+
     if resp.status().is_success() {
         Ok("Issue 已关闭".to_string())
     } else {
@@ -839,8 +947,15 @@ async fn github_close_issue(token: String, issue_number: u64, comment: String) -
 }
 
 #[tauri::command]
-async fn github_save_config(app_handle: tauri::AppHandle, token: String, role: String) -> Result<String, String> {
-    let app_dir = app_handle.path().app_data_dir().unwrap_or_else(|_| PathBuf::from("."));
+async fn github_save_config(
+    app_handle: tauri::AppHandle,
+    token: String,
+    role: String,
+) -> Result<String, String> {
+    let app_dir = app_handle
+        .path()
+        .app_data_dir()
+        .unwrap_or_else(|_| PathBuf::from("."));
     let _ = fs::create_dir_all(&app_dir);
     let config = json!({
         "github_token": token,
@@ -853,7 +968,10 @@ async fn github_save_config(app_handle: tauri::AppHandle, token: String, role: S
 
 #[tauri::command]
 async fn github_load_config(app_handle: tauri::AppHandle) -> Result<Value, String> {
-    let app_dir = app_handle.path().app_data_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let app_dir = app_handle
+        .path()
+        .app_data_dir()
+        .unwrap_or_else(|_| PathBuf::from("."));
     let config_path = app_dir.join("github_config.json");
     if config_path.exists() {
         let content = fs::read_to_string(&config_path).unwrap_or_default();
@@ -866,7 +984,10 @@ async fn github_load_config(app_handle: tauri::AppHandle) -> Result<Value, Strin
 
 fn main() {
     tauri::Builder::default()
-        .manage(AppState { unlocked: Mutex::new(false) })
+        .plugin(tauri_plugin_process::init())
+        .manage(AppState {
+            unlocked: Mutex::new(false),
+        })
         .setup(|app| {
             std::thread::spawn(startup_adb_prepare);
             start_track_devices(app.handle().clone());
@@ -878,11 +999,30 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            verify_license, check_auth_status, adb_raw, adb_shell, adb_shell_screenshot, adb_push, adb_pull,
-            adb_devices, adb_kill_server, adb_start_server, adb_install, adb_install_safe,
-            install_driver, extract_app_icon, adb_diagnose, adb_reconnect, adb_quick_connect,
-            github_fetch_db, github_push_db, github_create_issue, github_list_issues,
-            github_close_issue, github_save_config, github_load_config
+            verify_license,
+            check_auth_status,
+            adb_raw,
+            adb_shell,
+            adb_shell_screenshot,
+            adb_push,
+            adb_pull,
+            adb_devices,
+            adb_kill_server,
+            adb_start_server,
+            adb_install,
+            adb_install_safe,
+            install_driver,
+            extract_app_icon,
+            adb_diagnose,
+            adb_reconnect,
+            adb_quick_connect,
+            github_fetch_db,
+            github_push_db,
+            github_create_issue,
+            github_list_issues,
+            github_close_issue,
+            github_save_config,
+            github_load_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
