@@ -133,7 +133,7 @@ export const VirusProvider = ({ children }) => {
 }, []);
 
   const fetchWithFallback = useCallback(async (path) => {
-    // 1. 优先尝试 Cloudflare Workers 代理 (通过 GitHub Contents API 直连拉取)
+    // 1. 优先尝试 Cloudflare Workers 代理 (从 raw.githubusercontent.com 拉取，永远最新)
     const proxyUrl = getGitHubApiUrl(`repos/${GITHUB_REPO}/contents/${path}`);
     try {
       const controller = new AbortController();
@@ -144,79 +144,84 @@ export const VirusProvider = ({ children }) => {
       
       if (res.ok) {
         const json = await res.json();
-        if (json && json.content && json.encoding === 'base64') {
-          const cleanStr = json.content.replace(/\s/g, '');
-          const decodedStr = decodeURIComponent(escape(atob(cleanStr)));
-          const data = JSON.parse(decodedStr);
-          return {
-            ok: true,
-            json: async () => data
-          };
+        // Worker 返回 { sha, content }，其中 content 是 base64 编码的文件内容
+        if (json && json.content) {
+          try {
+            const cleanStr = json.content.replace(/\s/g, '');
+            const decodedStr = decodeURIComponent(escape(atob(cleanStr)));
+            const data = JSON.parse(decodedStr);
+            return { ok: true, json: async () => data };
+          } catch (parseErr) {
+            console.warn(`Cloudflare proxy parse failed for ${path}:`, parseErr);
+          }
         }
       }
     } catch (e) {
-      console.warn(`Cloudflare proxy fetch failed for ${path}, falling back to CDN...`, e);
+      console.warn(`Cloudflare proxy fetch failed for ${path}, falling back...`, e);
     }
 
-    // 2. 如果代理失败，退回到国内镜像代理、CDN 节点和 GitHub Raw 直连进行竞速
-    const fallbackUrls = [
+    // 2. 备用：只使用永远最新的源（直接代理 raw.githubusercontent.com，无 CDN 缓存问题）
+    const freshUrls = [
       `https://gh-proxy.com/https://raw.githubusercontent.com/${GITHUB_REPO}/main/${path}`,
       `https://ghfast.top/https://raw.githubusercontent.com/${GITHUB_REPO}/main/${path}`,
-      `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
-      `https://fastly.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
-      `https://gcore.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}`,
       `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${path}`
+    ];
+
+    // 先并发尝试所有"新鲜"数据源，谁先返回用谁
+    const freshResult = await new Promise((resolve, reject) => {
+      let failedCount = 0;
+      let isResolved = false;
+      freshUrls.forEach((url, i) => {
+        setTimeout(() => {
+          if (isResolved) return;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          fetch(url, { signal: controller.signal })
+            .then(async (r) => {
+              clearTimeout(timeoutId);
+              if (r.ok && !isResolved) {
+                try {
+                  const data = await r.json();
+                  if (!isResolved) { isResolved = true; resolve({ ok: true, json: async () => data }); }
+                } catch { failedCount++; if (failedCount === freshUrls.length) reject(new Error('parse failed')); }
+              } else { failedCount++; if (failedCount === freshUrls.length) reject(new Error('all fresh failed')); }
+            })
+            .catch(() => { clearTimeout(timeoutId); failedCount++; if (failedCount === freshUrls.length && !isResolved) reject(new Error('network failed')); });
+        }, i * 150);
+      });
+    }).catch(() => null);
+
+    if (freshResult) return freshResult;
+
+    // 3. 最后手段：jsDelivr CDN（可能有缓存延迟，但在上面全部失败时作为兜底）
+    const cacheBust = `?_cb=${Date.now()}`;
+    const cdnUrls = [
+      `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}${cacheBust}`,
+      `https://fastly.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}${cacheBust}`,
+      `https://gcore.jsdelivr.net/gh/${GITHUB_REPO}@main/${path}${cacheBust}`,
     ];
 
     return new Promise((resolve, reject) => {
       let failedCount = 0;
       let isResolved = false;
-
-      const doFetch = (url) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        
-        fetch(url, { signal: controller.signal })
-          .then(async (r) => {
-            clearTimeout(timeoutId);
-            if (r.ok && !isResolved) {
-              try {
-                const data = await r.json();
-                if (!isResolved) {
-                  isResolved = true;
-                  resolve({
-                    ok: true,
-                    json: async () => data
-                  });
-                }
-              } catch (err) {
-                if (!isResolved) {
-                  failedCount++;
-                  if (failedCount === fallbackUrls.length) {
-                    reject(new Error(`Failed to fetch ${path} from all sources`));
-                  }
-                }
-              }
-            } else if (!isResolved) {
-              failedCount++;
-              if (failedCount === fallbackUrls.length) reject(new Error(`Failed to fetch ${path} from all sources`));
-            }
-          })
-          .catch(() => {
-            clearTimeout(timeoutId);
-            if (!isResolved) {
-              failedCount++;
-              if (failedCount === fallbackUrls.length) reject(new Error(`Failed to fetch ${path} from all sources`));
-            }
-          });
-      };
-
-      // 并发竞速：每隔 100ms 发起一个不同节点的请求，谁先返回就用谁的
-      fallbackUrls.forEach((url, i) => {
-        setTimeout(() => { if (!isResolved) doFetch(url); }, i * 100);
+      cdnUrls.forEach((url, i) => {
+        setTimeout(() => {
+          if (isResolved) return;
+          fetch(url)
+            .then(async (r) => {
+              if (r.ok && !isResolved) {
+                try {
+                  const data = await r.json();
+                  if (!isResolved) { isResolved = true; resolve({ ok: true, json: async () => data }); }
+                } catch { failedCount++; if (failedCount === cdnUrls.length && !isResolved) reject(new Error(`Failed to fetch ${path}`)); }
+              } else { failedCount++; if (failedCount === cdnUrls.length && !isResolved) reject(new Error(`Failed to fetch ${path}`)); }
+            })
+            .catch(() => { failedCount++; if (failedCount === cdnUrls.length && !isResolved) reject(new Error(`Failed to fetch ${path}`)); });
+        }, i * 100);
       });
     });
   }, [getGitHubApiUrl]);
+
 
 // ==================== GitHub DB Sync Functions ====================
 
