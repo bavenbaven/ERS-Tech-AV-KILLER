@@ -1,11 +1,11 @@
 {
-  "version": "1.6.0",
-  "pub_date": "2026-06-12T13:00:00Z",
-  "notes": "[MIN_VERSION:1.5.0] ERS Tech AV KILLER v1.6.0 - 修复同步稳定性，多线路自动切换（国内外均丝滑），删除手动代理配置，升级版本号",
+  "version": "1.7.0",
+  "pub_date": "2026-06-14T14:30:00Z",
+  "notes": "[MIN_VERSION:1.6.0] ERS Tech AV KILLER v1.7.0 - 重大更新：修复病毒上报(多代理+重试)、优化APK安装(随机文件名+自动授权+重试)、增强病毒删除(移除设备管理员+强制卸载)、性能优化(缓存时间增加)",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIG1pbmlzaWduIHNlY3JldCBrZXkNClJVUUZ6cEJEWDU5NGJCbjNtSWgrUGRwMVY5bHpOZXVFM1ZrQUYxdjdHamlaRHFrSkNiSlY1Q0M0Qzc1Y2RheUVNc1dtZGttQUVQSmJheDNiVFBEOGNHUk9MOTZqZVYvVzlnbz0NCnRydXN0ZWQgY29tbWVudDogdGltZXN0YW1wOjE3ODEzMjcyMDMJZmlsZTpFUlMuVGVjaC5BVi5LaWxsZXJfMS42LjBfeDY0LXNldHVwLmV4ZQloYXNoZWQNClNUNFlrTStOUm1jTS9reVo1VHFIdEdpRld1Q2FlS0loQW5TcnJ1UEE4NE9CcFpiRG5OVVFuOE5pOUo3UWNHK05RZUlDSnhTeEg5SXFJNTJnbjlOeUFBPT0NCg==",
-      "url": "https://github.com/bavenbaven/ERS-Tech-AV-KILLER/releases/download/v1.6.0/ERS.Tech.AV.Killer_1.6.0_x64-setup.exe"
+      "signature": "",
+      "url": "https://github.com/bavenbaven/ERS-Tech-AV-KILLER/releases/download/v1.7.0/ERS.Tech.AV.Killer_1.7.0_x64-setup.exe"
     }
   }
 }

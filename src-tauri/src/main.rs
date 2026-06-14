@@ -260,13 +260,57 @@ fn adb_install_safe(
     if !src.exists() {
         return Err(format!("APK file not found: {}", apk_path));
     }
+    
+    // 使用时间戳生成随机临时文件名，避免并发冲突
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
     let temp_dir = std::env::temp_dir();
-    let dest = temp_dir.join("ers_install_tmp.apk");
+    let dest = temp_dir.join(format!("ers_install_{}.apk", timestamp));
+    
+    // 确保临时文件不存在
     let _ = std::fs::remove_file(&dest);
+    
+    // 复制APK到临时目录
     std::fs::copy(src, &dest).map_err(|e| format!("Cannot copy APK to temp: {}", e))?;
-    let result = run_adb(&["-s", &device_id, "install", "-r", &dest.to_string_lossy()]);
+    
+    // 带重试机制的安装
+    let max_retries = 3;
+    let mut last_error = String::new();
+    
+    for attempt in 1..=max_retries {
+        // 使用 -r (替换现有) -g (自动授权所有权限) -t (允许测试APK)
+        let result = run_adb(&["-s", &device_id, "install", "-r", "-g", "-t", &dest.to_string_lossy()]);
+        
+        match result {
+            Ok(ref output) if output.contains("Success") => {
+                let _ = std::fs::remove_file(&dest);
+                return Ok(output.clone());
+            }
+            Ok(ref output) => {
+                last_error = format!("安装失败(尝试{}/{}): {}", attempt, max_retries, output);
+                // 如果是特定错误，可能需要等待后重试
+                if output.contains("INSTALL_FAILED_INSUFFICIENT_STORAGE") {
+                    // 存储空间不足，不需要重试
+                    let _ = std::fs::remove_file(&dest);
+                    return Err(format!("存储空间不足，无法安装。{}", output));
+                }
+            }
+            Err(e) => {
+                last_error = format!("ADB错误(尝试{}/{}): {}", attempt, max_retries, e);
+            }
+        }
+        
+        // 如果不是最后一次尝试，等待后重试
+        if attempt < max_retries {
+            std::thread::sleep(std::time::Duration::from_secs(2));
+        }
+    }
+    
+    // 清理临时文件
     let _ = std::fs::remove_file(&dest);
-    result
+    Err(format!("安装失败，已重试{}次。最后错误: {}", max_retries, last_error))
 }
 
 #[tauri::command]
@@ -827,40 +871,66 @@ fn chrono_wrapper() -> String {
     format!("{}", now)
 }
 
+// 多个备用代理服务器列表
+const GITHUB_ISSUE_PROXIES: &[&str] = &[
+    "https://ers-github-proxy.bavenbaven.workers.dev",
+    "https://api.github.com",  // GitHub 官方 API 直连
+    "https://ghproxy.com/https://api.github.com",  // ghproxy 代理
+    "https://gh-proxy.com/https://api.github.com",  // gh-proxy 代理
+];
+
 #[tauri::command]
 async fn github_create_issue(token: String, title: String, body: String) -> Result<String, String> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(15))  // 增加超时时间到15秒
         .build()
         .map_err(|e| format!("创建请求失败: {}", e))?;
 
-    let url = format!(
-        "https://ers-github-proxy.bavenbaven.workers.dev/repos/{}/issues",
-        GITHUB_REPO
-    );
     let body_json = json!({
         "title": title,
         "body": body,
         "labels": ["pending"]
     });
 
-    let resp = client
-        .post(&url)
-        .header("Authorization", format!("token {}", token))
-        .header("User-Agent", "ERS-Tech-AV-Killer")
-        .json(&body_json)
-        .send()
-        .await
-        .map_err(|e| format!("网络请求失败: {}", e))?;
-
-    if resp.status().is_success() {
-        let data: Value = resp.json().await.unwrap_or_default();
-        let html_url = data["html_url"].as_str().unwrap_or("");
-        Ok(html_url.to_string())
-    } else {
-        let err = resp.text().await.unwrap_or_default();
-        Err(format!("创建 Issue 失败: {}", err))
+    // 尝试所有代理服务器
+    let mut last_error = String::new();
+    for (idx, proxy) in GITHUB_ISSUE_PROXIES.iter().enumerate() {
+        let url = format!("{}/repos/{}/issues", proxy, GITHUB_REPO);
+        
+        match client
+            .post(&url)
+            .header("Authorization", format!("token {}", token))
+            .header("User-Agent", "ERS-Tech-AV-Killer")
+            .json(&body_json)
+            .send()
+            .await
+        {
+            Ok(resp) if resp.status().is_success() => {
+                if let Ok(data) = resp.json::<Value>().await {
+                    if let Some(html_url) = data["html_url"].as_str() {
+                        if !html_url.is_empty() {
+                            return Ok(html_url.to_string());
+                        }
+                    }
+                }
+            }
+            Ok(resp) => {
+                let status = resp.status();
+                let err_text = resp.text().await.unwrap_or_default();
+                last_error = format!("代理{}返回错误({}): {}", idx + 1, status, err_text);
+            }
+            Err(e) => {
+                last_error = format!("代理{}连接失败: {}", idx + 1, e);
+            }
+        }
+        
+        // 如果不是最后一个代理，等待一小段时间再尝试下一个
+        if idx < GITHUB_ISSUE_PROXIES.len() - 1 {
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
     }
+
+    Err(format!("所有代理服务器均失败。最后错误: {}", last_error))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

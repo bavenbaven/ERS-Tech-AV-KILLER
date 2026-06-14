@@ -30,13 +30,15 @@ let lastLogcatFetch = 0;
 let cachedCpuUsage = new Map();
 let lastCpuFetch = 0;
 
-// ===== Device Info Cache (5s TTL) — 避免每次刷新都跑 5 条 ADB =====
+// ===== Device Info Cache (30s TTL) — 避免每次刷新都跑 5 条 ADB =====
+// 优化：从5秒增加到30秒，设备信息不常变化
 const deviceInfoCache = new Map(); // deviceId -> { data, ts }
-const DEVICE_INFO_TTL = 5000;
+const DEVICE_INFO_TTL = 30000;
 
-// ===== Apps List Cache (30s TTL) — 避免切 tab 重新 pm list packages =====
+// ===== Apps List Cache (60s TTL) — 避免切 tab 重新 pm list packages =====
+// 优化：从30秒增加到60秒，应用列表变化不频繁
 const appsCache = new Map(); // deviceId -> { list, ts }
-const APPS_CACHE_TTL = 30000;
+const APPS_CACHE_TTL = 60000;
 
 async function tauriInvoke(cmd, args = {}) {
   return tauriInvokeCore(cmd, args);
@@ -222,11 +224,92 @@ export function invalidateAppsCache(deviceId) {
   else appsCache.clear();
 }
 
-// ===== Uninstall =====
+// ===== Uninstall (增强版：自动移除设备管理员权限 + 强制卸载 + 重试) =====
 export async function uninstallApp(deviceId, pkg) {
   if (isTauri) {
-    const raw = await tauriInvoke('adb_shell', { deviceId, command: `pm uninstall ${pkg}` });
-    return { success: raw.includes('Success'), result: raw.trim() };
+    // 步骤1: 尝试移除设备管理员权限（常见病毒会注册为设备管理员）
+    const adminReceivers = [
+      `${pkg}/.DeviceAdminReceiver`,
+      `${pkg}/com.android.deviceadmin.DeviceAdminReceiver`,
+      `${pkg}/android.app.admin.DeviceAdminReceiver`,
+      `${pkg}/DeviceAdminReceiver`,
+    ];
+    
+    for (const admin of adminReceivers) {
+      await tauriInvoke('adb_shell', { 
+        deviceId, 
+        command: `dpm remove-active-admin ${admin} 2>/dev/null || true` 
+      }).catch(() => {});
+    }
+    
+    // 步骤2: 尝试禁用应用（防止卸载失败后继续运行）
+    await tauriInvoke('adb_shell', { 
+      deviceId, 
+      command: `pm disable-user --user 0 ${pkg} 2>/dev/null || true` 
+    }).catch(() => {});
+    
+    // 步骤3: 尝试普通卸载
+    let raw = await tauriInvoke('adb_shell', { deviceId, command: `pm uninstall ${pkg}` });
+    
+    if (raw.includes('Success')) {
+      invalidateAppsCache(deviceId);
+      return { success: true, result: raw.trim() };
+    }
+    
+    // 步骤4: 如果失败，尝试强制卸载（保留数据）
+    if (!raw.includes('Success')) {
+      raw = await tauriInvoke('adb_shell', { 
+        deviceId, 
+        command: `pm uninstall -k --user 0 ${pkg} 2>&1` 
+      });
+      
+      if (raw.includes('Success')) {
+        invalidateAppsCache(deviceId);
+        return { success: true, result: raw.trim(), method: 'force_keep_data' };
+      }
+    }
+    
+    // 步骤5: 如果还是失败，尝试完全强制卸载（删除数据和代码）
+    if (!raw.includes('Success')) {
+      // 先清除应用数据
+      await tauriInvoke('adb_shell', { 
+        deviceId, 
+        command: `pm clear ${pkg} 2>/dev/null || true` 
+      }).catch(() => {});
+      
+      // 再尝试卸载
+      raw = await tauriInvoke('adb_shell', { 
+        deviceId, 
+        command: `pm uninstall --user 0 ${pkg} 2>&1` 
+      });
+      
+      if (raw.includes('Success')) {
+        invalidateAppsCache(deviceId);
+        return { success: true, result: raw.trim(), method: 'force_clear_data' };
+      }
+    }
+    
+    // 步骤6: 最后尝试使用 root 权限卸载（如果设备已 root）
+    if (!raw.includes('Success')) {
+      raw = await tauriInvoke('adb_shell', { 
+        deviceId, 
+        command: `su -c 'pm uninstall ${pkg}' 2>&1` 
+      });
+      
+      if (raw.includes('Success')) {
+        invalidateAppsCache(deviceId);
+        return { success: true, result: raw.trim(), method: 'root' };
+      }
+    }
+    
+    // 所有方法都失败
+    const errorMsg = raw.includes('DELETE_FAILED_INTERNAL_ERROR') 
+      ? '系统内部错误，可能需要手动在设置中卸载'
+      : raw.includes('not installed') 
+        ? '应用未安装或已被卸载'
+        : `卸载失败: ${raw.trim()}`;
+    
+    return { success: false, result: raw.trim(), error: errorMsg };
   }
   return apiFetch('/uninstall', { method: 'POST', body: JSON.stringify({ deviceId, pkg }) });
 }
