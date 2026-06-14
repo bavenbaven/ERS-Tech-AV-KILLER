@@ -4,7 +4,7 @@
   "notes": "[MIN_VERSION:1.6.0] ERS Tech AV KILLER v1.7.0 - 重大更新：修复病毒上报(多代理+重试)、优化APK安装(随机文件名+自动授权+重试)、增强病毒删除(移除设备管理员+强制卸载)、性能优化(缓存时间增加)",
   "platforms": {
     "windows-x86_64": {
-      "signature": "",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSNzdEdm5KRFgyUTErbzNRVFdzRCtXM3RPZ0pKS2pMVFpMcHV6WDJPWlg3R1VBdFdHZUdQemQ2ZHg0amdjZDcwV0Z3NEdNUFV1NHhKSVZlWmtPeWp6K2hvMDQ2TXJDMndjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxNDI2NzQ1CWZpbGU6RVJTIFRlY2ggQVYgS2lsbGVyXzEuNy4wX3g2NC1zZXR1cC5leGUKU2k2aVFVSDZiWVFnWFF0SVI3UUFHcGlEZjkvbHNTZWFGK04zZzBaTDJZT01zaGtwVGs5TVFjRUhQWVhRZWZwcHV4M1JYM1l1Ui85d0FyTzNJOU83QXc9PQo=",
       "url": "https://github.com/bavenbaven/ERS-Tech-AV-KILLER/releases/download/v1.7.0/ERS.Tech.AV.Killer_1.7.0_x64-setup.exe"
     }
   }
